@@ -4,7 +4,7 @@ import uuid
 import enum
 from datetime import datetime
 
-from sqlalchemy import String, DateTime, ForeignKey, Enum as SAEnum
+from sqlalchemy import String, DateTime, ForeignKey, Enum as SAEnum, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -33,9 +33,9 @@ class ScheduleEvent(Base):
     status: Mapped[EventStatus] = mapped_column(
         SAEnum(EventStatus), nullable=False,
         default=EventStatus.SCHEDULED,
-        server_default=EventStatus.SCHEDULED.value
+        server_default=text("'scheduled'")
     )
 
-    offering: Mapped["Offering"] = relationship("Offering")
+    offering: Mapped["Offering"] = relationship("Offering", back_populates="events")
     teacher: Mapped["User"] = relationship("User", back_populates="taught_events", foreign_keys=[teacher_id])
     student: Mapped["User | None"] = relationship("User", back_populates="enrolled_events", foreign_keys=[student_id])

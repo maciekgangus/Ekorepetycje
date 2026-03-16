@@ -2,11 +2,15 @@
 
 import uuid
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from sqlalchemy import String, Text, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.scheduling import ScheduleEvent
 
 
 class Offering(Base):
@@ -21,3 +25,6 @@ class Offering(Base):
     teacher_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     teacher: Mapped["User"] = relationship("User", back_populates="offerings", foreign_keys=[teacher_id])
+    events: Mapped[list["ScheduleEvent"]] = relationship(
+        "ScheduleEvent", back_populates="offering", foreign_keys="[ScheduleEvent.offering_id]"
+    )

@@ -2,7 +2,7 @@
 
 import uuid
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 
 from app.models.users import UserRole
 
@@ -10,7 +10,7 @@ from app.models.users import UserRole
 class UserBase(BaseModel):
     """Shared fields for user read/write operations."""
 
-    email: str
+    email: EmailStr
     full_name: str
     role: UserRole
 
