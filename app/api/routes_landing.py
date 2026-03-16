@@ -22,7 +22,7 @@ async def contact_page(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("landing/contact.html", {"request": request})
 
 
-@router.post("/api/contact", response_class=HTMLResponse)
+@router.post("/contact/submit", response_class=HTMLResponse)
 async def submit_contact(
     request: Request,
     name: str = Form(...),

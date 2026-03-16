@@ -780,6 +780,10 @@ video {
   resize: none;
 }
 
+.scroll-mt-20 {
+  scroll-margin-top: 5rem;
+}
+
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
@@ -1232,6 +1236,21 @@ video {
 
 .duration-300 {
   transition-duration: 300ms;
+}
+
+/* HTMX indicator visibility */
+
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity 200ms ease-in;
+}
+
+.htmx-request .htmx-indicator {
+  opacity: 1;
+}
+
+.htmx-request.htmx-indicator {
+  opacity: 1;
 }
 
 .hover\:border-gray-700:hover {
