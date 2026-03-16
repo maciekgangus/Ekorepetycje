@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
+from pydantic import ValidationError
 
 from app.core.templates import templates
 from app.schemas.contact import ContactForm
@@ -30,7 +31,14 @@ async def submit_contact(
     message: str = Form(...),
 ) -> HTMLResponse:
     """Handle contact form submissions and return an HTMX success fragment."""
-    form = ContactForm(name=name, email=email, message=message)
+    try:
+        form = ContactForm(name=name, email=email, message=message)
+    except ValidationError:
+        return templates.TemplateResponse(
+            "components/contact_error.html",
+            {"request": request, "error": "Nieprawidłowy adres e-mail. Sprawdź wpisany adres."},
+            status_code=422,
+        )
     await send_contact_email(form)
     return templates.TemplateResponse(
         "components/contact_success.html", {"request": request}
