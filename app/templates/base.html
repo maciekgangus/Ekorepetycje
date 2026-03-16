@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ekorepetycje{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased min-h-screen">
+    {% include "components/navbar.html" %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    {% include "components/footer.html" %}
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

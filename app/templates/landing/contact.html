@@ -1,6 +1,51 @@
-<!DOCTYPE html>
-<html lang="pl">
-<body>
-  <h1>Contact</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Kontakt — Ekorepetycje{% endblock %}
+
+{% block content %}
+<section class="pt-32 pb-24 px-6">
+    <div class="max-w-2xl mx-auto">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-white mb-4">Skontaktuj się z nami</h1>
+            <p class="text-gray-400">Wypełnij formularz, a odezwiemy się w ciągu 24 godzin.</p>
+        </div>
+
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-8">
+            <form id="contact-form"
+                  hx-post="/api/contact"
+                  hx-target="#contact-form"
+                  hx-swap="outerHTML"
+                  hx-indicator="#form-spinner">
+                <div class="space-y-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Imię i nazwisko</label>
+                        <input type="text" id="name" name="name" required
+                               class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors"
+                               placeholder="Jan Kowalski">
+                    </div>
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Adres e-mail</label>
+                        <input type="email" id="email" name="email" required
+                               class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors"
+                               placeholder="jan@example.com">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-sm font-medium text-gray-300 mb-2">Wiadomość</label>
+                        <textarea id="message" name="message" rows="5" required
+                                  class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors resize-none"
+                                  placeholder="Napisz, z jakiego przedmiotu potrzebujesz pomocy..."></textarea>
+                    </div>
+                    <button type="submit" id="form-spinner"
+                            class="w-full bg-green-500 hover:bg-green-400 text-gray-950 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <span>Wyślij wiadomość</span>
+                        <svg class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

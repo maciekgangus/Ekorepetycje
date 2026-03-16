@@ -1,0 +1,14 @@
+<div class="group relative bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-green-500/30 hover:bg-gray-900/80 transition-all duration-300">
+    <div class="flex items-start justify-between mb-3">
+        <span class="text-xs font-medium text-green-400 bg-green-400/10 px-2.5 py-1 rounded-full">
+            {{ offering.category if offering.category else "Korepetycje" }}
+        </span>
+        <span class="text-lg font-semibold text-white">{{ offering.base_price_per_hour }} zł<span class="text-sm font-normal text-gray-400">/h</span></span>
+    </div>
+    <h3 class="text-lg font-medium text-white mb-2">{{ offering.title }}</h3>
+    <p class="text-sm text-gray-400 leading-relaxed">{{ offering.description or "" }}</p>
+    <div class="mt-4 flex items-center gap-2 text-sm text-gray-500">
+        <span>👤</span>
+        <span>{{ offering.teacher.full_name if offering.teacher else "Nauczyciel" }}</span>
+    </div>
+</div>

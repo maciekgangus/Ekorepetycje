@@ -30,8 +30,6 @@ env/
 # Node
 node_modules/
 
-# Tailwind compiled output
-app/static/css/style.css
 
 # IDE
 .idea/
