@@ -1,0 +1,6 @@
+"""Import all models here so Alembic's autogenerate can discover them."""
+
+from app.db.database import Base  # noqa: F401
+from app.models.users import User  # noqa: F401
+from app.models.offerings import Offering  # noqa: F401
+from app.models.scheduling import ScheduleEvent  # noqa: F401

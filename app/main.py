@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
+from app.api import routes_landing
 from app.core.config import settings
 
 # ---------------------------------------------------------------------------
@@ -16,6 +17,11 @@ STATIC_DIR = BASE_DIR / "static"
 app = FastAPI(title="Ekorepetycje", debug=settings.DEBUG)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
+app.include_router(routes_landing.router)
 
 
 # ---------------------------------------------------------------------------
