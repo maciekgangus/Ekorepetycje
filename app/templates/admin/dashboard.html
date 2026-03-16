@@ -79,7 +79,7 @@
             <form hx-post="/admin/offerings/create"
                   hx-target="#offerings-list"
                   hx-swap="outerHTML"
-                  hx-on::after-request="document.getElementById('new-offering-form').classList.add('hidden')"
+                  hx-on::after-request="if(event.detail.successful) document.getElementById('new-offering-form').classList.add('hidden')"
                   class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">Tytuł</label>
@@ -117,10 +117,8 @@
             </form>
         </div>
 
-        <!-- Offerings list (HTMX target) -->
-        <div id="offerings-list" class="space-y-3">
-            <p class="text-sm text-gray-500 text-center py-8">Brak ofert. Kliknij "Nowa Oferta" aby dodać pierwszą.</p>
-        </div>
+        <!-- Offerings list (HTMX target, server-side rendered on initial load) -->
+        {% include "components/offerings_list.html" %}
     </div>
 </div>
 {% endblock %}
