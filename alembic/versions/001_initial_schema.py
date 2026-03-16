@@ -18,62 +18,59 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # --- Enums ---
-    userrole_enum = sa.Enum("admin", "teacher", "student", name="userrole")
-    eventstatus_enum = sa.Enum("scheduled", "completed", "cancelled", name="eventstatus")
-    userrole_enum.create(op.get_bind(), checkfirst=True)
-    eventstatus_enum.create(op.get_bind(), checkfirst=True)
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'userrole') THEN
+                CREATE TYPE userrole AS ENUM ('admin', 'teacher', 'student');
+            END IF;
+        END $$;
+    """)
 
-    # --- users ---
-    op.create_table(
-        "users",
-        sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("role", sa.Enum("admin", "teacher", "student", name="userrole"), nullable=False),
-        sa.Column("email", sa.String(255), nullable=False),
-        sa.Column("hashed_password", sa.String(255), nullable=False),
-        sa.Column("full_name", sa.String(255), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("email"),
-    )
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'eventstatus') THEN
+                CREATE TYPE eventstatus AS ENUM ('scheduled', 'completed', 'cancelled');
+            END IF;
+        END $$;
+    """)
 
-    # --- offerings ---
-    op.create_table(
-        "offerings",
-        sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("title", sa.String(255), nullable=False),
-        sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("base_price_per_hour", sa.Numeric(10, 2), nullable=False),
-        sa.Column("teacher_id", sa.UUID(), nullable=False),
-        sa.ForeignKeyConstraint(["teacher_id"], ["users.id"]),
-        sa.PrimaryKeyConstraint("id"),
-    )
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY,
+            role userrole NOT NULL,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            hashed_password VARCHAR(255) NOT NULL,
+            full_name VARCHAR(255) NOT NULL
+        )
+    """)
 
-    # --- schedule_events ---
-    op.create_table(
-        "schedule_events",
-        sa.Column("id", sa.UUID(), nullable=False),
-        sa.Column("title", sa.String(255), nullable=False),
-        sa.Column("start_time", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("end_time", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("offering_id", sa.UUID(), nullable=False),
-        sa.Column("teacher_id", sa.UUID(), nullable=False),
-        sa.Column("student_id", sa.UUID(), nullable=True),
-        sa.Column(
-            "status",
-            sa.Enum("scheduled", "completed", "cancelled", name="eventstatus"),
-            nullable=False,
-            server_default="scheduled",
-        ),
-        sa.ForeignKeyConstraint(["offering_id"], ["offerings.id"]),
-        sa.ForeignKeyConstraint(["teacher_id"], ["users.id"]),
-        sa.ForeignKeyConstraint(["student_id"], ["users.id"]),
-        sa.PrimaryKeyConstraint("id"),
-    )
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS offerings (
+            id UUID PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            base_price_per_hour NUMERIC(10, 2) NOT NULL,
+            teacher_id UUID NOT NULL REFERENCES users(id)
+        )
+    """)
+
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS schedule_events (
+            id UUID PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            start_time TIMESTAMPTZ NOT NULL,
+            end_time TIMESTAMPTZ NOT NULL,
+            offering_id UUID NOT NULL REFERENCES offerings(id),
+            teacher_id UUID NOT NULL REFERENCES users(id),
+            student_id UUID REFERENCES users(id),
+            status eventstatus NOT NULL DEFAULT 'scheduled'
+        )
+    """)
 
 
 def downgrade() -> None:
-    op.drop_table("schedule_events")
-    op.drop_table("offerings")
-    op.drop_table("users")
-    sa.Enum(name="eventstatus").drop(op.get_bind(), checkfirst=True)
-    sa.Enum(name="userrole").drop(op.get_bind(), checkfirst=True)
+    op.execute("DROP TABLE IF EXISTS schedule_events")
+    op.execute("DROP TABLE IF EXISTS offerings")
+    op.execute("DROP TABLE IF EXISTS users")
+    op.execute("DROP TYPE IF EXISTS eventstatus")
+    op.execute("DROP TYPE IF EXISTS userrole")
