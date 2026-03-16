@@ -123,15 +123,11 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         // Handle date range selection (create new event)
-        select: async function (info) {
-            const title = prompt('Tytuł nowego zajęcia:');
-            if (!title) {
-                calendar.unselect();
-                return;
-            }
-            // For MVP: use first teacher and offering if available, else skip
+        select: function (info) {
+            // MVP: creating events requires selecting a teacher and offering.
+            // This interaction is not yet implemented via the calendar UI.
+            // Use the admin dashboard form to create offerings first.
             calendar.unselect();
-            console.log('New event stub — full form needed for teacher/offering selection');
         },
     });
 

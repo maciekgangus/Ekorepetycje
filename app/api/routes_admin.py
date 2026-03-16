@@ -16,13 +16,13 @@ router = APIRouter(prefix="/admin")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def admin_dashboard(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
+async def admin_dashboard(request: Request) -> HTMLResponse:
     """Admin overview dashboard with stats."""
     return templates.TemplateResponse("admin/dashboard.html", {"request": request})
 
 
 @router.get("/calendar", response_class=HTMLResponse)
-async def admin_calendar(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
+async def admin_calendar(request: Request) -> HTMLResponse:
     """FullCalendar view for managing schedule events."""
     return templates.TemplateResponse("admin/calendar.html", {"request": request})
 
