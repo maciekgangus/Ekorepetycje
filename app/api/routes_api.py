@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.api.dependencies import get_db
 from app.models.scheduling import ScheduleEvent, EventStatus
@@ -66,6 +66,7 @@ async def delete_event(
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     await db.delete(event)
+    await db.flush()
 
 
 @router.get("/offerings", response_model=list[OfferingRead])
@@ -100,14 +101,15 @@ async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
 @router.get("/stats")
 async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     """Return basic statistics for the admin dashboard."""
-    from sqlalchemy import func
-
     total_events = (await db.execute(select(func.count(ScheduleEvent.id)))).scalar_one()
     scheduled = (await db.execute(
         select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.SCHEDULED)
     )).scalar_one()
     completed = (await db.execute(
         select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.COMPLETED)
+    )).scalar_one()
+    cancelled = (await db.execute(
+        select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.CANCELLED)
     )).scalar_one()
     total_offerings = (await db.execute(select(func.count(Offering.id)))).scalar_one()
     total_teachers = (await db.execute(
@@ -117,6 +119,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
         "total_events": total_events,
         "scheduled": scheduled,
         "completed": completed,
+        "cancelled": cancelled,
         "total_offerings": total_offerings,
         "total_teachers": total_teachers,
     }

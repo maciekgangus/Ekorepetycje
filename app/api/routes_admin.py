@@ -1,6 +1,6 @@
 """Admin dashboard HTML routes."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -37,11 +37,21 @@ async def create_offering_htmx(
     db: AsyncSession = Depends(get_db),
 ) -> HTMLResponse:
     """HTMX endpoint to create a new offering and return updated list fragment."""
+    try:
+        price = Decimal(base_price_per_hour)
+        t_id = UUID(teacher_id)
+    except (InvalidOperation, ValueError):
+        return templates.TemplateResponse(
+            "components/error_fragment.html",
+            {"request": request, "error": "Nieprawidłowe dane. Sprawdź UUID nauczyciela i cenę."},
+            status_code=422,
+        )
+
     offering = Offering(
         title=title,
         description=description or None,
-        base_price_per_hour=Decimal(base_price_per_hour),
-        teacher_id=UUID(teacher_id),
+        base_price_per_hour=price,
+        teacher_id=t_id,
     )
     db.add(offering)
     await db.flush()

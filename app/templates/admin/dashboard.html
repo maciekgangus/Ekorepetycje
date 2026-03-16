@@ -51,7 +51,7 @@
                     <div class="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center">
                         <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     </div>
-                    <span class="text-sm text-gray-300">Dodaj nowe zajęcie</span>
+                    <span class="text-sm text-gray-300">Otwórz kalendarz zajęć</span>
                 </a>
                 <a href="/admin/calendar" class="flex items-center gap-3 p-3 bg-gray-800/50 rounded-xl hover:bg-gray-800 transition-colors">
                     <div class="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
@@ -119,7 +119,7 @@
 
         <!-- Offerings list (HTMX target) -->
         <div id="offerings-list" class="space-y-3">
-            <p class="text-sm text-gray-500 text-center py-8">Ładowanie ofert...</p>
+            <p class="text-sm text-gray-500 text-center py-8">Brak ofert. Kliknij "Nowa Oferta" aby dodać pierwszą.</p>
         </div>
     </div>
 </div>
@@ -161,7 +161,7 @@ async function loadStats() {
             data: {
                 labels: ['Zaplanowane', 'Ukończone', 'Anulowane'],
                 datasets: [{
-                    data: [stats.scheduled, stats.completed, stats.total_events - stats.scheduled - stats.completed],
+                    data: [stats.scheduled, stats.completed, stats.cancelled],
                     backgroundColor: ['#22c55e', '#3b82f6', '#ef4444'],
                     borderWidth: 0,
                     hoverOffset: 4,
@@ -184,31 +184,6 @@ async function loadStats() {
     }
 }
 
-// Load offerings list
-async function loadOfferings() {
-    try {
-        const res = await fetch('/api/offerings');
-        const offerings = await res.json();
-        const el = document.getElementById('offerings-list');
-        if (!offerings.length) {
-            el.innerHTML = '<p class="text-sm text-gray-500 text-center py-8">Brak ofert. Dodaj pierwszą ofertę powyżej.</p>';
-            return;
-        }
-        el.innerHTML = offerings.map(o => `
-            <div class="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
-                <div>
-                    <p class="text-sm font-medium text-white">${o.title}</p>
-                    <p class="text-xs text-gray-400 mt-0.5">${o.description || '—'}</p>
-                </div>
-                <span class="text-sm font-semibold text-green-400 whitespace-nowrap ml-4">${o.base_price_per_hour} zł/h</span>
-            </div>
-        `).join('');
-    } catch (err) {
-        console.error('Failed to load offerings:', err);
-    }
-}
-
 loadStats();
-loadOfferings();
 </script>
 {% endblock %}
