@@ -93,31 +93,15 @@
             <p class="text-gray-400 max-w-xl mx-auto">Wybierz przedmiot i poziom dopasowany do Twoich potrzeb.</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Static offering cards for MVP -->
-            <div class="group bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-green-500/30 hover:bg-gray-900/80 transition-all duration-300">
-                <div class="flex items-start justify-between mb-3">
-                    <span class="text-xs font-medium text-green-400 bg-green-400/10 px-2.5 py-1 rounded-full">Matematyka</span>
-                    <span class="text-lg font-semibold text-white">80 zł<span class="text-sm font-normal text-gray-400">/h</span></span>
-                </div>
-                <h3 class="text-lg font-medium text-white mb-2">Matura Rozszerzona</h3>
-                <p class="text-sm text-gray-400">Intensywne przygotowanie do matury z matematyki na poziomie rozszerzonym.</p>
-            </div>
-            <div class="group bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-green-500/30 hover:bg-gray-900/80 transition-all duration-300">
-                <div class="flex items-start justify-between mb-3">
-                    <span class="text-xs font-medium text-green-400 bg-green-400/10 px-2.5 py-1 rounded-full">Angielski</span>
-                    <span class="text-lg font-semibold text-white">70 zł<span class="text-sm font-normal text-gray-400">/h</span></span>
-                </div>
-                <h3 class="text-lg font-medium text-white mb-2">Konwersacje B2–C1</h3>
-                <p class="text-sm text-gray-400">Swobodne konwersacje i przygotowanie do egzaminów Cambridge FCE/CAE.</p>
-            </div>
-            <div class="group bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-green-500/30 hover:bg-gray-900/80 transition-all duration-300">
-                <div class="flex items-start justify-between mb-3">
-                    <span class="text-xs font-medium text-green-400 bg-green-400/10 px-2.5 py-1 rounded-full">Biologia</span>
-                    <span class="text-lg font-semibold text-white">75 zł<span class="text-sm font-normal text-gray-400">/h</span></span>
-                </div>
-                <h3 class="text-lg font-medium text-white mb-2">Biologia Medyczna</h3>
-                <p class="text-sm text-gray-400">Przygotowanie do egzaminów wstępnych na kierunki medyczne i biologiczne.</p>
-            </div>
+            {% with offering={"title": "Matura Rozszerzona", "description": "Intensywne przygotowanie do matury z matematyki na poziomie rozszerzonym.", "base_price_per_hour": 80, "category": "Matematyka", "teacher": {"full_name": "Anna Kowalska"}} %}
+                {% include "components/offering_card.html" %}
+            {% endwith %}
+            {% with offering={"title": "Konwersacje B2–C1", "description": "Swobodne konwersacje i przygotowanie do egzaminów Cambridge FCE/CAE.", "base_price_per_hour": 70, "category": "Angielski", "teacher": {"full_name": "Marek Nowak"}} %}
+                {% include "components/offering_card.html" %}
+            {% endwith %}
+            {% with offering={"title": "Biologia Medyczna", "description": "Przygotowanie do egzaminów wstępnych na kierunki medyczne i biologiczne.", "base_price_per_hour": 75, "category": "Biologia", "teacher": {"full_name": "Katarzyna Wiśniewska"}} %}
+                {% include "components/offering_card.html" %}
+            {% endwith %}
         </div>
     </div>
 </section>

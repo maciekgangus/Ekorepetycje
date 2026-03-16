@@ -35,10 +35,10 @@
                                   class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors resize-none"
                                   placeholder="Napisz, z jakiego przedmiotu potrzebujesz pomocy..."></textarea>
                     </div>
-                    <button type="submit" id="form-spinner"
+                    <button type="submit"
                             class="w-full bg-green-500 hover:bg-green-400 text-gray-950 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
                         <span>Wyślij wiadomość</span>
-                        <svg class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <svg id="form-spinner" class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                         </svg>
