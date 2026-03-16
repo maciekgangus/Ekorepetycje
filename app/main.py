@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import routes_landing
+from app.api import routes_landing, routes_api, routes_admin
 from app.core.config import settings
 
 # ---------------------------------------------------------------------------
@@ -22,6 +22,8 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), na
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(routes_landing.router)
+app.include_router(routes_api.router)
+app.include_router(routes_admin.router)
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,15 @@
+<div id="offerings-list" class="space-y-3">
+{% if offerings %}
+    {% for offering in offerings %}
+    <div class="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
+        <div>
+            <p class="text-sm font-medium text-white">{{ offering.title }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">{{ offering.description or "—" }}</p>
+        </div>
+        <span class="text-sm font-semibold text-green-400 whitespace-nowrap ml-4">{{ offering.base_price_per_hour }} zł/h</span>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="text-sm text-gray-500 text-center py-8">Brak ofert. Dodaj pierwszą ofertę powyżej.</p>
+{% endif %}
+</div>
