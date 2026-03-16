@@ -2,7 +2,7 @@
 
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.models.users import UserRole
 
@@ -19,6 +19,14 @@ class UserCreate(UserBase):
     """Schema for creating a new user (includes plain-text password)."""
 
     password: str
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        """Ensure the password meets the minimum length requirement."""
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
 
 
 class UserRead(UserBase):

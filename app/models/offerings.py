@@ -20,4 +20,4 @@ class Offering(Base):
     base_price_per_hour: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     teacher_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
-    teacher: Mapped["User"] = relationship("User", foreign_keys=[teacher_id])
+    teacher: Mapped["User"] = relationship("User", back_populates="offerings", foreign_keys=[teacher_id])

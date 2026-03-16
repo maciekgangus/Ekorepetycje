@@ -16,7 +16,7 @@ STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="Ekorepetycje", debug=settings.DEBUG)
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), name="static")
 
 # ---------------------------------------------------------------------------
 # Routers
