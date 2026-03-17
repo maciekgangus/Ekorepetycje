@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Profil — Ekorepetycje{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-6 max-w-lg mx-auto">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Mój profil</h1>
+        <p class="text-gray-400 mt-1">{{ user.full_name }} &mdash; {{ user.email }}</p>
+    </div>
+
+    {% if error %}
+    <div class="mb-6 text-sm text-red-400 border border-red-400/20 bg-red-400/10 px-4 py-3 rounded-xl">
+        {{ error }}
+    </div>
+    {% endif %}
+    {% if success %}
+    <div class="mb-6 text-sm text-green-400 border border-green-400/20 bg-green-400/10 px-4 py-3 rounded-xl">
+        {{ success }}
+    </div>
+    {% endif %}
+
+    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6">
+        <h2 class="text-lg font-semibold text-white mb-4">Zmień hasło</h2>
+        <form method="post" action="/profile/password" class="space-y-4">
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Obecne hasło</label>
+                <input type="password" name="old_password" required
+                       class="w-full bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Nowe hasło</label>
+                <input type="password" name="new_password" required
+                       class="w-full bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <button type="submit" class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+                Zapisz
+            </button>
+        </form>
+    </div>
+
+    <div class="mt-6">
+        <a href="javascript:history.back()" class="text-sm text-gray-400 hover:text-white transition-colors">← Wstecz</a>
+    </div>
+</div>
+{% endblock %}
