@@ -2,119 +2,540 @@
 
 {% block title %}Ekorepetycje — Korepetycje na miarę Twoich potrzeb{% endblock %}
 
+{% block html_attrs %}{% endblock %}
+
+{% block body_attrs %}class="bg-cream text-ink font-sans antialiased min-h-screen"{% endblock %}
+
+{% block navbar %}{% include "components/navbar_landing.html" %}{% endblock %}
+
 {% block content %}
-<!-- Hero Section -->
-<section class="relative pt-32 pb-24 px-6 overflow-hidden">
-    <!-- Background gradient -->
-    <div class="absolute inset-0 bg-gradient-to-br from-green-950/30 via-gray-950 to-gray-950 pointer-events-none"></div>
-    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-green-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-    <div class="relative max-w-4xl mx-auto text-center">
-        <div class="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 text-sm px-4 py-2 rounded-full mb-8">
-            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-            Zapisy otwarte na rok 2025/2026
-        </div>
-        <h1 class="text-5xl sm:text-6xl font-bold tracking-tight text-white mb-6 leading-[1.1]">
-            Korepetycje,<br>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-300">które działają</span>
-        </h1>
-        <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Indywidualne podejście, doświadczeni nauczyciele i elastyczny grafik.
-            Pomożemy Ci osiągnąć wymarzone wyniki.
+<!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
+<section id="hero" class="min-h-screen pt-16 px-6 grid grid-cols-1 lg:grid-cols-5 gap-0 items-stretch">
+
+    <!-- Left column -->
+    <div class="lg:col-span-3 flex flex-col justify-center py-20 lg:py-0 lg:pr-16 border-r border-ink/10">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-8">
+            Korepetycje &nbsp;·&nbsp; Warszawa &amp; Online
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/contact" class="inline-flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-8 py-3.5 rounded-xl transition-colors text-base">
+
+        <h1 class="font-serif text-5xl md:text-6xl lg:text-[4.5rem] font-bold leading-[1.08] text-ink mb-6">
+            Wiedza,<br>
+            <em class="not-italic text-navy">przekazana</em><br>
+            precyzyjnie.
+        </h1>
+
+        <p class="text-lg text-ink/60 leading-relaxed max-w-lg mb-10">
+            Indywidualne korepetycje z matematyki, programowania i języków obcych.
+            Sprawdzone metody, elastyczny grafik, mierzalne wyniki.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a href="#kontakt"
+               class="inline-flex items-center justify-center gap-2 bg-navy hover:bg-navy/90 text-cream font-medium px-8 py-3.5 transition-colors tracking-wide text-sm">
                 Umów bezpłatną konsultację
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                </svg>
             </a>
-            <a href="/#oferty" class="inline-flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white font-medium px-8 py-3.5 rounded-xl transition-colors text-base border border-gray-700">
-                Zobacz oferty
+            <a href="#przedmioty"
+               class="inline-flex items-center justify-center gap-2 border border-ink/20 hover:border-ink/40 text-ink font-medium px-8 py-3.5 transition-colors text-sm">
+                Zobacz przedmioty
             </a>
         </div>
     </div>
-</section>
 
-<!-- Stats bar -->
-<section class="py-12 px-6 border-y border-gray-800/50">
-    <div class="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
-        <div>
-            <p class="text-3xl font-bold text-white">200+</p>
-            <p class="text-sm text-gray-400 mt-1">Zadowolonych uczniów</p>
+    <!-- Right column -->
+    <div class="lg:col-span-2 flex flex-col justify-center py-20 lg:py-0 lg:pl-12 gap-4">
+
+        <!-- Stat cards — 2×2 then wide -->
+        <div class="grid grid-cols-2 gap-3">
+            <div class="border border-ink/10 p-5 bg-cream">
+                <p class="font-serif text-4xl font-bold text-navy leading-none mb-1">200+</p>
+                <p class="text-xs text-ink/50 tracking-wide">Zadowolonych uczniów</p>
+            </div>
+            <div class="border border-ink/10 p-5 bg-cream">
+                <p class="font-serif text-4xl font-bold text-navy leading-none mb-1">95%</p>
+                <p class="text-xs text-ink/50 tracking-wide">Zdawalność egzaminów</p>
+            </div>
+            <div class="col-span-2 border border-ink/10 p-5 bg-cream">
+                <p class="font-serif text-4xl font-bold text-navy leading-none mb-1">8 lat</p>
+                <p class="text-xs text-ink/50 tracking-wide">Doświadczenia w nauczaniu</p>
+            </div>
         </div>
-        <div>
-            <p class="text-3xl font-bold text-white">95%</p>
-            <p class="text-sm text-gray-400 mt-1">Skuteczność</p>
+
+        <!-- Testimonial card in navy -->
+        <div class="bg-navy p-6 text-cream">
+            <p class="font-serif text-lg italic leading-relaxed mb-4 text-cream/90">
+                „Dzięki korepetycjom zdałem maturę rozszerzoną z matematyki na 88%. Polecam każdemu,
+                kto poważnie traktuje swoje wyniki."
+            </p>
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-cream/10 flex items-center justify-center text-cream/70 text-xs font-medium">
+                    MK
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-cream">Michał K.</p>
+                    <p class="text-xs text-cream/50">Matura rozszerzona, 2024</p>
+                </div>
+            </div>
         </div>
-        <div>
-            <p class="text-3xl font-bold text-white">10+</p>
-            <p class="text-sm text-gray-400 mt-1">Przedmiotów</p>
-        </div>
+
     </div>
 </section>
 
-<!-- Teachers Section -->
-<section id="nauczyciele" class="py-24 px-6 scroll-mt-20">
+<!-- Divider rule -->
+<div class="border-t border-ink/10"></div>
+
+<!-- ─── SUBJECTS ───────────────────────────────────────────────────────────── -->
+<section id="przedmioty" class="py-24 px-6 scroll-mt-16">
     <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl font-bold text-white mb-4">Nasi Nauczyciele</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Wykwalifikowani specjaliści z pasją do nauczania i udokumentowanymi wynikami.</p>
+
+        <div class="mb-14">
+            <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Oferta</p>
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Przedmioty</h2>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Teacher Card 1 -->
-            <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center text-gray-950 font-bold text-lg mb-4">A</div>
-                <h3 class="text-lg font-semibold text-white mb-1">Anna Kowalska</h3>
-                <p class="text-sm text-green-400 mb-3">Matematyka · Fizyka</p>
-                <p class="text-sm text-gray-400 leading-relaxed">10 lat doświadczenia w przygotowaniu do matury. Specjalizacja: matura rozszerzona.</p>
-            </div>
-            <!-- Teacher Card 2 -->
-            <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-cyan-600 flex items-center justify-center text-gray-950 font-bold text-lg mb-4">M</div>
-                <h3 class="text-lg font-semibold text-white mb-1">Marek Nowak</h3>
-                <p class="text-sm text-green-400 mb-3">Język Angielski · Niemiecki</p>
-                <p class="text-sm text-gray-400 leading-relaxed">Certyfikowany lektor z doświadczeniem w Cambridge i IELTS. Poziomy A1–C2.</p>
-            </div>
-            <!-- Teacher Card 3 -->
-            <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 hover:border-gray-700 transition-colors">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-violet-600 flex items-center justify-center text-gray-950 font-bold text-lg mb-4">K</div>
-                <h3 class="text-lg font-semibold text-white mb-1">Katarzyna Wiśniewska</h3>
-                <p class="text-sm text-green-400 mb-3">Biologia · Chemia</p>
-                <p class="text-sm text-gray-400 leading-relaxed">Doktorantka nauk biologicznych. Pomaga zdać maturę i przygotować się na studia medyczne.</p>
-            </div>
+
+        <!-- Filter tabs -->
+        <div class="flex flex-wrap gap-2 mb-10 border-b border-ink/10 pb-6">
+            <button
+                class="px-4 py-2 text-sm border border-navy bg-navy text-cream tracking-wide transition-colors subject-filter active"
+                hx-get="/subjects?level=all"
+                hx-target="#subjects-grid"
+                hx-swap="innerHTML"
+                hx-indicator="#subjects-loading">
+                Wszystkie
+            </button>
+            <button
+                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
+                hx-get="/subjects?level=podstawowa"
+                hx-target="#subjects-grid"
+                hx-swap="innerHTML"
+                hx-indicator="#subjects-loading">
+                Podstawówka
+            </button>
+            <button
+                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
+                hx-get="/subjects?level=liceum"
+                hx-target="#subjects-grid"
+                hx-swap="innerHTML"
+                hx-indicator="#subjects-loading">
+                Liceum
+            </button>
+            <button
+                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
+                hx-get="/subjects?level=studia"
+                hx-target="#subjects-grid"
+                hx-swap="innerHTML"
+                hx-indicator="#subjects-loading">
+                Studia
+            </button>
+            <span id="subjects-loading" class="htmx-indicator ml-auto self-center text-xs text-ink/40">
+                Ładowanie…
+            </span>
         </div>
+
+        <!-- Subject cards grid -->
+        <div id="subjects-grid" class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <!-- Mathematics & Physics -->
+            <div class="bg-cream p-8 group hover:bg-navy/5 transition-colors">
+                <div class="mb-6">
+                    <svg class="w-8 h-8 text-navy/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"/>
+                    </svg>
+                </div>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">
+                    Matematyka &amp; Fizyka
+                </h3>
+                <p class="text-sm text-ink/55 leading-relaxed mb-6">
+                    Od równań liniowych po rachunek całkowy. Przygotowanie do matury podstawowej
+                    i rozszerzonej, olimpiad oraz egzaminów wstępnych.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">podstawówka</span>
+                    <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
+                    <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
+                </div>
+            </div>
+
+            <!-- Programming & IT -->
+            <div class="bg-cream p-8 group hover:bg-navy/5 transition-colors">
+                <div class="mb-6">
+                    <svg class="w-8 h-8 text-navy/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+                    </svg>
+                </div>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">
+                    Programowanie &amp; IT
+                </h3>
+                <p class="text-sm text-ink/55 leading-relaxed mb-6">
+                    Python, JavaScript, algorytmy i struktury danych. Przygotowanie do matury
+                    z informatyki, rozmów kwalifikacyjnych i projektów studenckich.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
+                    <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
+                </div>
+            </div>
+
+            <!-- Foreign Languages -->
+            <div class="bg-cream p-8 group hover:bg-navy/5 transition-colors">
+                <div class="mb-6">
+                    <svg class="w-8 h-8 text-navy/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502"/>
+                    </svg>
+                </div>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">
+                    Języki Obce
+                </h3>
+                <p class="text-sm text-ink/55 leading-relaxed mb-6">
+                    Angielski, niemiecki, hiszpański — od A1 do C2. Konwersacje, przygotowanie
+                    do Cambridge, IELTS, TOEFL i matur językowych.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">podstawówka</span>
+                    <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
+                    <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
+                </div>
+            </div>
+
+        </div><!-- #subjects-grid -->
+
     </div>
 </section>
 
-<!-- Offerings Section -->
-<section id="oferty" class="py-24 px-6 bg-gray-900/30 scroll-mt-20">
+<!-- Divider -->
+<div class="border-t border-ink/10"></div>
+
+<!-- ─── HOW IT WORKS ───────────────────────────────────────────────────────── -->
+<section id="metoda" class="py-24 px-6 scroll-mt-16">
     <div class="max-w-6xl mx-auto">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl font-bold text-white mb-4">Nasze Oferty</h2>
-            <p class="text-gray-400 max-w-xl mx-auto">Wybierz przedmiot i poziom dopasowany do Twoich potrzeb.</p>
+
+        <div class="mb-16">
+            <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Metoda</p>
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Jak to działa</h2>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% with offering={"title": "Matura Rozszerzona", "description": "Intensywne przygotowanie do matury z matematyki na poziomie rozszerzonym.", "base_price_per_hour": 80, "category": "Matematyka", "teacher": {"full_name": "Anna Kowalska"}} %}
-                {% include "components/offering_card.html" %}
-            {% endwith %}
-            {% with offering={"title": "Konwersacje B2–C1", "description": "Swobodne konwersacje i przygotowanie do egzaminów Cambridge FCE/CAE.", "base_price_per_hour": 70, "category": "Angielski", "teacher": {"full_name": "Marek Nowak"}} %}
-                {% include "components/offering_card.html" %}
-            {% endwith %}
-            {% with offering={"title": "Biologia Medyczna", "description": "Przygotowanie do egzaminów wstępnych na kierunki medyczne i biologiczne.", "base_price_per_hour": 75, "category": "Biologia", "teacher": {"full_name": "Katarzyna Wiśniewska"}} %}
-                {% include "components/offering_card.html" %}
-            {% endwith %}
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <div class="bg-cream p-8">
+                <p class="font-serif text-6xl font-bold text-ink/10 leading-none mb-6 select-none">I</p>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">Kontakt</h3>
+                <p class="text-sm text-ink/55 leading-relaxed">
+                    Napisz do nas lub wypełnij formularz. Opisz przedmiot, poziom i swoje cele —
+                    odpiszemy w ciągu 24 godzin.
+                </p>
+            </div>
+
+            <div class="bg-cream p-8 border-l border-r border-ink/0">
+                <p class="font-serif text-6xl font-bold text-ink/10 leading-none mb-6 select-none">II</p>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">Dobór nauczyciela</h3>
+                <p class="text-sm text-ink/55 leading-relaxed">
+                    Dopasujemy nauczyciela do Twojego stylu nauki, harmonogramu i specyfiki
+                    przedmiotu. Pierwsza konsultacja jest bezpłatna.
+                </p>
+            </div>
+
+            <div class="bg-cream p-8">
+                <p class="font-serif text-6xl font-bold text-ink/10 leading-none mb-6 select-none">III</p>
+                <h3 class="font-serif text-xl font-semibold text-ink mb-3">Zajęcia i wyniki</h3>
+                <p class="text-sm text-ink/55 leading-relaxed">
+                    Ustalamy plan działania i zaczynamy pracować. Po każdych zajęciach
+                    omawiamy postępy i korygujemy kurs.
+                </p>
+            </div>
+
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="py-24 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-        <h2 class="text-3xl font-bold text-white mb-4">Gotowy, żeby zacząć?</h2>
-        <p class="text-gray-400 mb-8">Bezpłatna konsultacja — poznaj swojego nauczyciela zanim zaczniesz.</p>
-        <a href="/contact" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-8 py-3.5 rounded-xl transition-colors">
-            Skontaktuj się z nami
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-        </a>
+<!-- Divider -->
+<div class="border-t border-ink/10"></div>
+
+<!-- ─── TESTIMONIALS ───────────────────────────────────────────────────────── -->
+<section id="opinie" class="py-24 px-6 scroll-mt-16 bg-ink/[0.02]">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-16">
+            <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Opinie</p>
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Co mówią uczniowie</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <div class="space-y-6">
+                <p class="font-serif text-2xl italic text-ink leading-relaxed">
+                    „Przed korepetycjami nie rozumiałam całkowania w ogóle. Po sześciu tygodniach
+                    dostałam czwórkę na zaliczeniu. To nie jest magia — to dobra metoda."
+                </p>
+                <div class="border-t border-ink/10 pt-5">
+                    <p class="font-medium text-ink text-sm">Aleksandra W.</p>
+                    <p class="text-xs text-ink/40 mt-0.5">Studia inżynierskie, Politechnika Warszawska</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <p class="font-serif text-2xl italic text-ink leading-relaxed">
+                    „Zdałem Cambridge FCE na B. Nauczyciel wiedział dokładnie, gdzie mam braki
+                    i jak je uzupełnić. Bardzo konkretne zajęcia, bez owijania w bawełnę."
+                </p>
+                <div class="border-t border-ink/10 pt-5">
+                    <p class="font-medium text-ink text-sm">Tomasz R.</p>
+                    <p class="text-xs text-ink/40 mt-0.5">Liceum ogólnokształcące, kl. III</p>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <p class="font-serif text-2xl italic text-ink leading-relaxed">
+                    „Syn chodził do pięciu korepetytorów bez efektu. Tutaj w dwa miesiące
+                    nadrobił zaległości z trzech semestrów. Różnica jest uderzająca."
+                </p>
+                <div class="border-t border-ink/10 pt-5">
+                    <p class="font-medium text-ink text-sm">Małgorzata K.</p>
+                    <p class="text-xs text-ink/40 mt-0.5">Rodzic ucznia, klasa VIII</p>
+                </div>
+            </div>
+
+        </div>
     </div>
 </section>
+
+<!-- Divider -->
+<div class="border-t border-ink/10"></div>
+
+<!-- ─── PRICING ────────────────────────────────────────────────────────────── -->
+<section id="cennik" class="py-24 px-6 scroll-mt-16">
+    <div class="max-w-6xl mx-auto">
+
+        <div class="mb-16">
+            <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Cennik</p>
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Przejrzyste ceny</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <!-- Single -->
+            <div class="bg-cream p-8">
+                <p class="text-xs font-medium text-ink/40 tracking-[0.15em] uppercase mb-6">Pojedyncza lekcja</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span class="font-serif text-5xl font-bold text-ink">80</span>
+                    <span class="text-ink/50 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-8">Bez zobowiązań. Idealna na próbę.</p>
+                <ul class="space-y-3 text-sm text-ink/60 mb-8">
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Jedna godzina zajęć</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Materiały do powtórki</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Elastyczny termin</span>
+                    </li>
+                </ul>
+                <a href="#kontakt"
+                   class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/60 text-sm py-3 transition-colors tracking-wide">
+                    Umów lekcję
+                </a>
+            </div>
+
+            <!-- Package 5 — featured -->
+            <div class="bg-navy p-8 relative">
+                <span class="absolute top-6 right-6 text-[10px] font-medium text-gold tracking-[0.15em] uppercase">Popularne</span>
+                <p class="text-xs font-medium text-cream/40 tracking-[0.15em] uppercase mb-6">Pakiet 5 lekcji</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span class="font-serif text-5xl font-bold text-cream">70</span>
+                    <span class="text-cream/50 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-cream/35 mb-8">350 zł łącznie. Oszczędzasz 50 zł.</p>
+                <ul class="space-y-3 text-sm text-cream/70 mb-8">
+                    <li class="flex items-start gap-2">
+                        <span class="text-gold mt-0.5">—</span>
+                        <span>5 godzin zajęć</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-gold mt-0.5">—</span>
+                        <span>Indywidualny plan nauki</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-gold mt-0.5">—</span>
+                        <span>Materiały i ćwiczenia</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-gold mt-0.5">—</span>
+                        <span>Raport postępów</span>
+                    </li>
+                </ul>
+                <a href="#kontakt"
+                   class="block text-center bg-cream hover:bg-cream/90 text-navy text-sm py-3 font-medium transition-colors tracking-wide">
+                    Wybierz pakiet
+                </a>
+            </div>
+
+            <!-- Package 10 -->
+            <div class="bg-cream p-8">
+                <p class="text-xs font-medium text-ink/40 tracking-[0.15em] uppercase mb-6">Pakiet 10 lekcji</p>
+                <div class="flex items-baseline gap-2 mb-2">
+                    <span class="font-serif text-5xl font-bold text-ink">65</span>
+                    <span class="text-ink/50 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-8">650 zł łącznie. Oszczędzasz 150 zł.</p>
+                <ul class="space-y-3 text-sm text-ink/60 mb-8">
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>10 godzin zajęć</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Wszystko z pakietu 5</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Cotygodniowe raporty</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-navy mt-0.5">—</span>
+                        <span>Priorytetowy kontakt</span>
+                    </li>
+                </ul>
+                <a href="#kontakt"
+                   class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/60 text-sm py-3 transition-colors tracking-wide">
+                    Wybierz pakiet
+                </a>
+            </div>
+
+        </div>
+
+        <p class="text-xs text-ink/35 mt-6 text-center">
+            Ceny dotyczą jednej godziny lekcyjnej (60 min). Pierwsza konsultacja bezpłatna.
+        </p>
+    </div>
+</section>
+
+<!-- Divider -->
+<div class="border-t border-ink/10"></div>
+
+<!-- ─── CONTACT ────────────────────────────────────────────────────────────── -->
+<section id="kontakt" class="py-24 px-6 scroll-mt-16 bg-navy text-cream">
+    <div class="max-w-xl mx-auto">
+
+        <div class="mb-12 text-center">
+            <p class="text-xs font-medium text-cream/35 tracking-[0.2em] uppercase mb-4">Kontakt</p>
+            <h2 class="font-serif text-4xl md:text-5xl font-bold text-cream mb-4">Porozmawiajmy</h2>
+            <p class="text-cream/55 text-base leading-relaxed">
+                Opisz swoje potrzeby. Odpiszemy w ciągu 24 godzin i zaproponujemy termin
+                bezpłatnej konsultacji.
+            </p>
+        </div>
+
+        <form id="contact-form"
+              hx-post="/contact/submit"
+              hx-target="#contact-form"
+              hx-swap="outerHTML"
+              hx-indicator="#form-spinner"
+              class="space-y-5">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="name" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Imię i nazwisko</label>
+                    <input type="text" id="name" name="name" required
+                           class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors text-sm"
+                           placeholder="Jan Kowalski">
+                </div>
+                <div>
+                    <label for="email" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Adres e-mail</label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors text-sm"
+                           placeholder="jan@example.com">
+                </div>
+            </div>
+
+            <div>
+                <label for="subject" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Przedmiot</label>
+                <input type="text" id="subject" name="subject"
+                       class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors text-sm"
+                       placeholder="np. Matematyka — matura rozszerzona">
+            </div>
+
+            <div>
+                <label for="message" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Wiadomość</label>
+                <textarea id="message" name="message" rows="5" required
+                          class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors resize-none text-sm"
+                          placeholder="Opisz swój poziom, cel i kiedy chcesz zacząć…"></textarea>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-cream hover:bg-cream/90 text-navy font-medium py-3.5 transition-colors flex items-center justify-center gap-2 tracking-wide text-sm">
+                <span>Wyślij wiadomość</span>
+                <svg id="form-spinner" class="htmx-indicator w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+            </button>
+
+        </form>
+
+    </div>
+</section>
+
 {% endblock %}
+
+{% block footer %}
+<footer class="bg-ink text-cream/40 border-t border-cream/5">
+    <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="font-serif text-cream/60 font-medium">Ekorepetycje</p>
+        <p class="text-xs tracking-wide">© 2026 Wszelkie prawa zastrzeżone.</p>
+        <a href="/contact" class="text-xs hover:text-cream/70 transition-colors tracking-wide">Kontakt</a>
+    </div>
+</footer>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Smooth scroll behaviour for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(function(anchor) {
+        anchor.addEventListener('click', function(e) {
+            var target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
+
+    // Subject filter tab active state
+    document.querySelectorAll('.subject-filter').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.subject-filter').forEach(function(b) {
+                b.classList.remove('bg-navy', 'text-cream', 'border-navy');
+                b.classList.add('border-ink/20', 'text-ink/60');
+            });
+            this.classList.add('bg-navy', 'text-cream', 'border-navy');
+            this.classList.remove('border-ink/20', 'text-ink/60');
+        });
+    });
+</script>
+{% endblock %}
+
+<!--
+  MOCK BACKEND RESPONSES (for reference when wiring up the API)
+  ─────────────────────────────────────────────────────────────
+
+  POST /contact/submit → 200 OK
+  Returns: components/contact_success.html fragment (outerHTML swap on #contact-form)
+
+  GET /subjects?level=all → 200 OK (same as default grid, all 3 cards)
+  GET /subjects?level=podstawowa → returns only cards with "podstawówka" level badge
+  GET /subjects?level=liceum → returns only cards with "liceum" level badge
+  GET /subjects?level=studia → returns only cards with "studia" level badge
+
+  Each /subjects response returns innerHTML for #subjects-grid —
+  a <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10"> with filtered cards.
+-->
