@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Ekorepetycje{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-6 max-w-5xl mx-auto">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Witaj, {{ user.full_name }}!</h1>
+            <p class="text-gray-400 mt-1">Twoje nadchodzące zajęcia</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/teacher/calendar" class="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">Kalendarz</a>
+            <a href="/teacher/proposals" class="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">Moje propozycje</a>
+            <form method="post" action="/logout" class="inline">
+                <button class="text-sm text-gray-500 hover:text-white transition-colors px-3 py-2">Wyloguj</button>
+            </form>
+        </div>
+    </div>
+
+    {% if not upcoming %}
+    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-12 text-center">
+        <p class="text-gray-500">Brak nadchodzących zajęć.</p>
+    </div>
+    {% else %}
+    <div class="space-y-3">
+        {% for event in upcoming %}
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 flex items-center justify-between">
+            <div>
+                <p class="text-white font-medium">{{ event.title }}</p>
+                <div class="flex items-center gap-4 mt-1 text-sm text-gray-400">
+                    <span>{{ event.start_time.strftime('%d.%m.%Y %H:%M') }} – {{ event.end_time.strftime('%H:%M') }}</span>
+                    {% if event.offering %}<span class="text-gray-500">{{ event.offering.title }}</span>{% endif %}
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                {% if event.student %}
+                <span class="text-sm text-gray-400">{{ event.student.full_name }}</span>
+                {% endif %}
+                <button onclick="document.getElementById('proposal-{{ event.id }}').classList.toggle('hidden')"
+                        class="text-xs border border-gray-700 text-gray-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors">
+                    Zaproponuj zmianę
+                </button>
+            </div>
+        </div>
+        <!-- Proposal form (hidden by default) -->
+        <div id="proposal-{{ event.id }}" class="hidden bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 ml-6">
+            <form method="post" action="/teacher/proposals/create" class="flex items-end gap-3"
+                  hx-post="/teacher/proposals/create" hx-target="closest div" hx-swap="outerHTML">
+                <input type="hidden" name="event_id" value="{{ event.id }}">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nowy start</label>
+                    <input type="datetime-local" name="new_start" required class="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nowy koniec</label>
+                    <input type="datetime-local" name="new_end" required class="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none">
+                </div>
+                <button type="submit" class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                    Wyślij
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+{% endblock %}

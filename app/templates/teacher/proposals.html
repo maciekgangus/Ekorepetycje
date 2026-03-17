@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Moje propozycje — Ekorepetycje{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-6 max-w-5xl mx-auto">
+    <div class="mb-8 flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-white">Moje propozycje zmiany terminu</h1>
+        <a href="/teacher/" class="text-sm text-gray-400 hover:text-white">← Dashboard</a>
+    </div>
+
+    {% if not proposals %}
+    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-12 text-center">
+        <p class="text-gray-500">Nie wysłano jeszcze żadnych propozycji.</p>
+    </div>
+    {% else %}
+    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden">
+        <table class="w-full text-sm">
+            <thead class="border-b border-gray-800/50">
+                <tr class="text-left text-xs text-gray-500 uppercase tracking-wide">
+                    <th class="px-6 py-4">Zajęcia</th>
+                    <th class="px-6 py-4">Proponowany termin</th>
+                    <th class="px-6 py-4">Wysłano</th>
+                    <th class="px-6 py-4">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-800/30">
+                {% for p in proposals %}
+                <tr class="hover:bg-gray-800/20 transition-colors">
+                    <td class="px-6 py-4 text-white">{{ p.event.title }}</td>
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ p.new_start.strftime('%d.%m.%Y %H:%M') }} – {{ p.new_end.strftime('%H:%M') }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-500">{{ p.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td class="px-6 py-4">
+                        {% if p.status.value == 'pending' %}
+                        <span class="px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">Oczekuje</span>
+                        {% elif p.status.value == 'approved' %}
+                        <span class="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">Zatwierdzone</span>
+                        {% else %}
+                        <span class="px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">Odrzucone</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
