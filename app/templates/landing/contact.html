@@ -2,50 +2,75 @@
 
 {% block title %}Kontakt — Ekorepetycje{% endblock %}
 
+{% block html_attrs %}{% endblock %}
+
+{% block body_attrs %}class="bg-cream text-ink font-sans antialiased min-h-screen"{% endblock %}
+
+{% block navbar %}{% include "components/navbar_landing.html" %}{% endblock %}
+
 {% block content %}
-<section class="pt-32 pb-24 px-6">
-    <div class="max-w-2xl mx-auto">
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-white mb-4">Skontaktuj się z nami</h1>
-            <p class="text-gray-400">Wypełnij formularz, a odezwiemy się w ciągu 24 godzin.</p>
+<section class="min-h-screen pt-16 flex items-center bg-navy text-cream px-6 py-24">
+    <div class="max-w-xl mx-auto w-full">
+
+        <div class="mb-12">
+            <a href="/" class="text-xs text-cream/35 hover:text-cream/60 tracking-wide transition-colors mb-8 inline-block">← Strona główna</a>
+            <p class="text-xs font-medium text-cream/35 tracking-[0.2em] uppercase mb-4">Kontakt</p>
+            <h1 class="font-serif text-4xl md:text-5xl font-bold text-cream mb-4">Porozmawiajmy</h1>
+            <p class="text-cream/55 leading-relaxed">
+                Wypełnij formularz. Odpiszemy w ciągu 24 godzin.
+            </p>
         </div>
 
-        <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-8">
-            <form id="contact-form"
-                  hx-post="/contact/submit"
-                  hx-target="#contact-form"
-                  hx-swap="outerHTML"
-                  hx-indicator="#form-spinner">
-                <div class="space-y-6">
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-300 mb-2">Imię i nazwisko</label>
-                        <input type="text" id="name" name="name" required
-                               class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors"
-                               placeholder="Jan Kowalski">
-                    </div>
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Adres e-mail</label>
-                        <input type="email" id="email" name="email" required
-                               class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors"
-                               placeholder="jan@example.com">
-                    </div>
-                    <div>
-                        <label for="message" class="block text-sm font-medium text-gray-300 mb-2">Wiadomość</label>
-                        <textarea id="message" name="message" rows="5" required
-                                  class="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500/50 focus:ring-1 focus:ring-green-500/50 transition-colors resize-none"
-                                  placeholder="Napisz, z jakiego przedmiotu potrzebujesz pomocy..."></textarea>
-                    </div>
-                    <button type="submit"
-                            class="w-full bg-green-500 hover:bg-green-400 text-gray-950 font-semibold py-3.5 rounded-xl transition-colors flex items-center justify-center gap-2">
-                        <span>Wyślij wiadomość</span>
-                        <svg id="form-spinner" class="htmx-indicator w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                        </svg>
-                    </button>
+        <form id="contact-form"
+              hx-post="/contact/submit"
+              hx-target="#contact-form"
+              hx-swap="outerHTML"
+              hx-indicator="#form-spinner"
+              class="space-y-5">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div>
+                    <label for="name" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Imię i nazwisko</label>
+                    <input type="text" id="name" name="name" required
+                           class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors text-sm"
+                           placeholder="Jan Kowalski">
                 </div>
-            </form>
-        </div>
+                <div>
+                    <label for="email" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Adres e-mail</label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors text-sm"
+                           placeholder="jan@example.com">
+                </div>
+            </div>
+
+            <div>
+                <label for="message" class="block text-xs font-medium text-cream/50 tracking-wide uppercase mb-2">Wiadomość</label>
+                <textarea id="message" name="message" rows="6" required
+                          class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors resize-none text-sm"
+                          placeholder="Opisz przedmiot, poziom i swoje cele…"></textarea>
+            </div>
+
+            <button type="submit"
+                    class="w-full bg-cream hover:bg-cream/90 text-navy font-medium py-3.5 transition-colors flex items-center justify-center gap-2 tracking-wide text-sm">
+                <span>Wyślij wiadomość</span>
+                <svg id="form-spinner" class="htmx-indicator w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+            </button>
+
+        </form>
+
     </div>
 </section>
+{% endblock %}
+
+{% block footer %}
+<footer class="bg-ink text-cream/40 border-t border-cream/5">
+    <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p class="font-serif text-cream/60 font-medium">Ekorepetycje</p>
+        <p class="text-xs tracking-wide">© 2026 Wszelkie prawa zastrzeżone.</p>
+        <a href="/" class="text-xs hover:text-cream/70 transition-colors tracking-wide">Strona główna</a>
+    </div>
+</footer>
 {% endblock %}

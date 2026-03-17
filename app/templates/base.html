@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="pl" class="dark">
+<html lang="pl" {% block html_attrs %}class="dark"{% endblock %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Ekorepetycje{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-950 text-gray-100 font-sans antialiased min-h-screen">
-    {% include "components/navbar.html" %}
+<body {% block body_attrs %}class="bg-gray-950 text-gray-100 font-inter antialiased min-h-screen"{% endblock %}>
+    {% block navbar %}{% include "components/navbar.html" %}{% endblock %}
     <main>
         {% block content %}{% endblock %}
     </main>
-    {% include "components/footer.html" %}
+    {% block footer %}{% include "components/footer.html" %}{% endblock %}
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     {% block extra_scripts %}{% endblock %}
 </body>

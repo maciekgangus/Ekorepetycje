@@ -17,6 +17,15 @@ services:
       timeout: 5s
       retries: 5
 
+  css:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app:z
+    command: sh -c "npm install --silent && npx tailwindcss -i ./app/static/css/input.css -o ./app/static/css/style.css --watch"
+    profiles:
+      - dev
+
   web:
     build: .
     ports:
