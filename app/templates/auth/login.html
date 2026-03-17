@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logowanie — Ekorepetycje</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-navy min-h-screen flex items-center justify-center font-sans">
+    <div class="w-full max-w-sm px-6 py-12">
+        <div class="mb-10 text-center">
+            <a href="/" class="font-serif text-2xl font-semibold text-cream">Ekorepetycje</a>
+            <p class="text-cream/40 text-sm mt-2 tracking-wide">Panel administracyjny</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-6 text-sm text-red-400 border border-red-400/20 bg-red-400/10 px-4 py-3">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login" class="space-y-5">
+            <div>
+                <label class="block text-xs font-medium text-cream/50 tracking-widest uppercase mb-2">E-mail</label>
+                <input type="email" name="email" required autofocus
+                       class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 text-sm"
+                       placeholder="jan@example.com">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-cream/50 tracking-widest uppercase mb-2">Hasło</label>
+                <input type="password" name="password" required
+                       class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 text-sm">
+            </div>
+            <button type="submit"
+                    class="w-full bg-cream hover:bg-cream/90 text-navy font-medium py-3 text-sm tracking-wide transition-colors mt-2">
+                Zaloguj się
+            </button>
+        </form>
+    </div>
+</body>
+</html>
