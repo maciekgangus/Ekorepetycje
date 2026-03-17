@@ -31,9 +31,10 @@ class ScheduleEvent(Base):
     teacher_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     student_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     status: Mapped[EventStatus] = mapped_column(
-        SAEnum(EventStatus), nullable=False,
+        SAEnum(EventStatus, values_callable=lambda obj: [e.value for e in obj]),
+        nullable=False,
         default=EventStatus.SCHEDULED,
-        server_default=text("'scheduled'")
+        server_default=text("'scheduled'"),
     )
 
     offering: Mapped["Offering"] = relationship("Offering", back_populates="events")
