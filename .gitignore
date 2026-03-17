@@ -43,3 +43,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local planning & session notes (never commit)
+docs/
+*.local.md
+implementation_plan.md
+CLAUDE.local.md
