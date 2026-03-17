@@ -37,6 +37,7 @@ services:
       - ./tests:/app/tests:z
       - ./pytest.ini:/app/pytest.ini:z
       - ./scripts:/app/scripts:z
+      - ./alembic:/app/alembic:z
     depends_on:
       db:
         condition: service_healthy
