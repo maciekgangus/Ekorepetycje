@@ -10,3 +10,8 @@ python-multipart
 httpx
 pydantic-settings
 email-validator
+passlib[bcrypt]
+itsdangerous
+pytest
+pytest-asyncio
+anyio[trio]
