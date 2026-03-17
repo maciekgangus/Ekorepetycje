@@ -34,6 +34,9 @@ services:
       - .env
     volumes:
       - ./app:/app/app:z
+      - ./tests:/app/tests:z
+      - ./pytest.ini:/app/pytest.ini:z
+      - ./scripts:/app/scripts:z
     depends_on:
       db:
         condition: service_healthy
