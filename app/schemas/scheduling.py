@@ -30,4 +30,5 @@ class ScheduleEventRead(ScheduleEventBase):
     """Schema returned when reading schedule event data from the API."""
 
     id: uuid.UUID
+    series_id: uuid.UUID | None = None
     model_config = {"from_attributes": True}
