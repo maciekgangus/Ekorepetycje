@@ -1,7 +1,7 @@
 """JSON API endpoints for FullCalendar hydration and admin data."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Form, HTTPException
@@ -165,7 +165,10 @@ async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
 
 
 @router.get("/students", response_model=list[dict])
-async def get_students(db: AsyncSession = Depends(get_db)) -> list[dict]:
+async def get_students(
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_teacher_or_admin),
+) -> list[dict]:
     """Return all students for dropdown population."""
     result = await db.execute(select(User).where(User.role == UserRole.STUDENT))
     return [{"id": str(u.id), "full_name": u.full_name} for u in result.scalars().all()]
@@ -299,6 +302,8 @@ async def delete_series_from(
     pivot = pivot_result.scalar_one_or_none()
     if not pivot:
         raise HTTPException(status_code=404, detail="Event not found")
+    if pivot.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Event not found in series")
 
     future_result = await db.execute(
         select(ScheduleEvent).where(
@@ -308,14 +313,14 @@ async def delete_series_from(
     )
     for event in future_result.scalars().all():
         await db.delete(event)
+    await db.flush()  # flush event deletions before counting remaining
 
     remaining_result = await db.execute(
         select(func.count(ScheduleEvent.id)).where(ScheduleEvent.series_id == series_id)
     )
     if remaining_result.scalar_one() == 0:
         await db.delete(series)
-
-    await db.flush()
+        await db.flush()
 
 
 @router.patch("/series/{series_id}/from/{event_id}", status_code=200)
@@ -327,8 +332,6 @@ async def update_series_from(
     current_user: User = Depends(require_teacher_or_admin),
 ) -> dict:
     """Delete event and all following, re-generate from updated rule starting that ISO week."""
-    from datetime import timedelta
-
     series_result = await db.execute(
         select(RecurringSeries).where(RecurringSeries.id == series_id)
     )
@@ -344,6 +347,8 @@ async def update_series_from(
     pivot = pivot_result.scalar_one_or_none()
     if not pivot:
         raise HTTPException(status_code=404, detail="Event not found")
+    if pivot.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Event not found in series")
 
     # Compute ISO-week anchor: Monday of pivot's week
     pivot_date = pivot.start_time.date()
@@ -368,6 +373,9 @@ async def update_series_from(
         raise HTTPException(status_code=422, detail=str(exc))
 
     # Update the series rule record
+    series.teacher_id = payload.teacher_id
+    series.student_id = payload.student_id
+    series.offering_id = payload.offering_id
     series.title = payload.title
     series.interval_weeks = payload.interval_weeks
     series.day_slots = [s.model_dump() for s in payload.day_slots]
