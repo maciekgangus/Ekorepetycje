@@ -37,7 +37,7 @@ class ScheduleEvent(Base):
     teacher_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     student_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     series_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("recurring_series.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("recurring_series.id", ondelete="SET NULL"), nullable=True, index=True
     )
     status: Mapped[EventStatus] = mapped_column(
         SAEnum(EventStatus, values_callable=lambda obj: [e.value for e in obj]),

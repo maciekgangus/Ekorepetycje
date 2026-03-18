@@ -11,6 +11,7 @@ from app.db.database import Base
 
 if TYPE_CHECKING:
     from app.models.scheduling import ScheduleEvent
+    from app.models.series import RecurringSeries
 
 
 class Offering(Base):
@@ -27,4 +28,7 @@ class Offering(Base):
     teacher: Mapped["User"] = relationship("User", back_populates="offerings", foreign_keys=[teacher_id])
     events: Mapped[list["ScheduleEvent"]] = relationship(
         "ScheduleEvent", back_populates="offering", foreign_keys="[ScheduleEvent.offering_id]"
+    )
+    series: Mapped[list["RecurringSeries"]] = relationship(
+        "RecurringSeries", back_populates="offering"
     )

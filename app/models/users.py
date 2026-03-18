@@ -14,6 +14,7 @@ from app.db.database import Base
 if TYPE_CHECKING:
     from app.models.offerings import Offering
     from app.models.scheduling import ScheduleEvent
+    from app.models.series import RecurringSeries
 
 
 class UserRole(str, enum.Enum):
@@ -46,4 +47,10 @@ class User(Base):
     )
     enrolled_events: Mapped[list["ScheduleEvent"]] = relationship(
         "ScheduleEvent", back_populates="student", foreign_keys="[ScheduleEvent.student_id]"
+    )
+    taught_series: Mapped[list["RecurringSeries"]] = relationship(
+        "RecurringSeries", back_populates="teacher", foreign_keys="[RecurringSeries.teacher_id]"
+    )
+    student_series: Mapped[list["RecurringSeries"]] = relationship(
+        "RecurringSeries", back_populates="student", foreign_keys="[RecurringSeries.student_id]"
     )

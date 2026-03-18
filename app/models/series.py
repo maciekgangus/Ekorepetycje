@@ -6,7 +6,7 @@ import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String
+from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -28,6 +28,17 @@ class RecurringSeries(Base):
 
     __tablename__ = "recurring_series"
 
+    __table_args__ = (
+        CheckConstraint(
+            "end_date IS NOT NULL OR end_count IS NOT NULL",
+            name="ck_recurring_series_has_end_condition",
+        ),
+        CheckConstraint(
+            "interval_weeks >= 1",
+            name="ck_recurring_series_interval_weeks_positive",
+        ),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     teacher_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     student_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"), nullable=True)
@@ -43,9 +54,9 @@ class RecurringSeries(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
-    teacher: Mapped["User"] = relationship("User", foreign_keys=[teacher_id])
-    student: Mapped["User | None"] = relationship("User", foreign_keys=[student_id])
-    offering: Mapped["Offering"] = relationship("Offering")
+    teacher: Mapped["User"] = relationship("User", foreign_keys=[teacher_id], back_populates="taught_series")
+    student: Mapped["User | None"] = relationship("User", foreign_keys=[student_id], back_populates="student_series")
+    offering: Mapped["Offering"] = relationship("Offering", back_populates="series")
     events: Mapped[list["ScheduleEvent"]] = relationship(
         "ScheduleEvent", back_populates="series", order_by="ScheduleEvent.start_time"
     )
