@@ -46,9 +46,12 @@ async def admin_dashboard(
 @router.get("/calendar", response_class=HTMLResponse)
 async def admin_calendar(
     request: Request,
-    _: User = Depends(require_admin),
+    current_user: User = Depends(require_admin),
 ) -> HTMLResponse:
-    return templates.TemplateResponse("admin/calendar.html", {"request": request})
+    return templates.TemplateResponse(
+        "admin/calendar.html",
+        {"request": request, "user": current_user},
+    )
 
 
 @router.get("/users", response_class=HTMLResponse)

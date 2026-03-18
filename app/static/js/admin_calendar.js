@@ -1,6 +1,6 @@
 /**
  * FullCalendar initialization for the Ekorepetycje admin panel.
- * Fetches events from GET /api/events and handles create/update/delete.
+ * Fetches events from GET /api/events and handles CRUD + series context menu.
  */
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
@@ -12,7 +12,13 @@ document.addEventListener('DOMContentLoaded', function () {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay',
+            right: 'newSeries dayGridMonth,timeGridWeek,timeGridDay',
+        },
+        customButtons: {
+            newSeries: {
+                text: '+ Nowa seria',
+                click: function () { openSeriesPanel(); },
+            },
         },
         height: 'auto',
         slotMinTime: '07:00:00',
@@ -24,17 +30,12 @@ document.addEventListener('DOMContentLoaded', function () {
         eventColor: '#22c55e',
         eventTextColor: '#030712',
 
-        // Load events from the backend
         events: {
             url: '/api/events',
             method: 'GET',
-            extraParams: {},
-            failure: function () {
-                console.error('Failed to load events from /api/events');
-            },
+            failure: function () { console.error('Failed to load events'); },
         },
 
-        // Transform backend event format to FullCalendar format
         eventDataTransform: function (rawEvent) {
             return {
                 id: rawEvent.id,
@@ -46,90 +47,172 @@ document.addEventListener('DOMContentLoaded', function () {
                     offering_id: rawEvent.offering_id,
                     teacher_id: rawEvent.teacher_id,
                     student_id: rawEvent.student_id,
+                    series_id: rawEvent.series_id,
                 },
                 color: rawEvent.status === 'completed' ? '#4b5563' :
                        rawEvent.status === 'cancelled' ? '#ef4444' : '#22c55e',
             };
         },
 
-        // Handle drag-and-drop reschedule
         eventDrop: async function (info) {
-            try {
-                const response = await fetch(`/api/events/${info.event.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: info.event.title,
-                        start_time: info.event.start.toISOString(),
-                        end_time: info.event.end.toISOString(),
-                        offering_id: info.event.extendedProps.offering_id,
-                        teacher_id: info.event.extendedProps.teacher_id,
-                        student_id: info.event.extendedProps.student_id,
-                        status: info.event.extendedProps.status,
-                    }),
-                });
-                if (!response.ok) {
-                    info.revert();
-                    console.error('Failed to update event:', await response.text());
-                }
-            } catch (err) {
-                info.revert();
-                console.error('Network error updating event:', err);
-            }
+            const ok = await _patchEvent(info.event);
+            if (!ok) info.revert();
         },
 
-        // Handle event resize
         eventResize: async function (info) {
-            try {
-                const response = await fetch(`/api/events/${info.event.id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: info.event.title,
-                        start_time: info.event.start.toISOString(),
-                        end_time: info.event.end.toISOString(),
-                        offering_id: info.event.extendedProps.offering_id,
-                        teacher_id: info.event.extendedProps.teacher_id,
-                        student_id: info.event.extendedProps.student_id,
-                        status: info.event.extendedProps.status,
-                    }),
-                });
-                if (!response.ok) {
-                    info.revert();
-                    console.error('Failed to resize event:', await response.text());
-                }
-            } catch (err) {
-                info.revert();
-                console.error('Network error resizing event:', err);
-            }
+            const ok = await _patchEvent(info.event);
+            if (!ok) info.revert();
         },
 
-        // Handle click on existing event (show delete option)
-        eventClick: async function (info) {
-            if (confirm(`Usuń wydarzenie: "${info.event.title}"?`)) {
-                try {
-                    const response = await fetch(`/api/events/${info.event.id}`, {
-                        method: 'DELETE',
-                    });
-                    if (response.ok) {
-                        info.event.remove();
-                    } else {
-                        console.error('Failed to delete event:', await response.text());
-                    }
-                } catch (err) {
-                    console.error('Network error deleting event:', err);
-                }
-            }
+        eventClick: function (info) {
+            _showContextMenu(info.event, info.jsEvent);
         },
 
-        // Handle date range selection (create new event)
-        select: function (info) {
-            // MVP: creating events requires selecting a teacher and offering.
-            // This interaction is not yet implemented via the calendar UI.
-            // Use the admin dashboard form to create offerings first.
-            calendar.unselect();
-        },
+        select: function () { calendar.unselect(); },
     });
 
     calendar.render();
+    window._calendar = calendar;
 });
+
+// ─── PATCH single event (drag/resize) ───────────────────────────────────────
+
+async function _patchEvent(event) {
+    try {
+        const resp = await fetch(`/api/events/${event.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: event.title,
+                start_time: event.start.toISOString(),
+                end_time: event.end.toISOString(),
+                offering_id: event.extendedProps.offering_id,
+                teacher_id: event.extendedProps.teacher_id,
+                student_id: event.extendedProps.student_id,
+                status: event.extendedProps.status,
+            }),
+        });
+        return resp.ok;
+    } catch { return false; }
+}
+
+// ─── Context menu ────────────────────────────────────────────────────────────
+
+let _activeMenu = null;
+
+function _showContextMenu(event, jsEvent) {
+    _closeContextMenu();
+
+    const seriesId = event.extendedProps.series_id;
+    const isSeries = !!seriesId;
+
+    const menu = document.createElement('div');
+    menu.id = 'fc-context-menu';
+    menu.className = 'fixed z-50 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1 min-w-[220px] text-sm';
+    menu.style.left = jsEvent.pageX + 'px';
+    menu.style.top = jsEvent.pageY + 'px';
+
+    const items = [];
+
+    if (isSeries) {
+        items.push({
+            label: 'Edytuj tę lekcję',
+            action: () => _editSingleEvent(event),
+        });
+        items.push({
+            label: 'Edytuj tę i następne',
+            action: () => openSeriesPanelEdit(seriesId, event.id),
+        });
+        items.push({ divider: true });
+        items.push({
+            label: 'Usuń tę lekcję',
+            danger: true,
+            action: async () => {
+                if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
+                const resp = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+                if (resp.ok) event.remove();
+            },
+        });
+        items.push({
+            label: 'Usuń tę i następne',
+            danger: true,
+            action: async () => {
+                if (!confirm(`Usuń tę i wszystkie następne lekcje z serii "${event.title}"?`)) return;
+                const resp = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE' });
+                if (resp.ok && window._calendar) window._calendar.refetchEvents();
+            },
+        });
+    } else {
+        items.push({
+            label: 'Edytuj',
+            action: () => _editSingleEvent(event),
+        });
+        items.push({ divider: true });
+        items.push({
+            label: 'Usuń',
+            danger: true,
+            action: async () => {
+                if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
+                const resp = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+                if (resp.ok) event.remove();
+            },
+        });
+    }
+
+    items.forEach(item => {
+        if (item.divider) {
+            const hr = document.createElement('div');
+            hr.className = 'border-t border-gray-800 my-1';
+            menu.appendChild(hr);
+            return;
+        }
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-4 py-2 transition-colors ${
+            item.danger
+                ? 'text-red-400 hover:bg-red-500/10'
+                : 'text-gray-200 hover:bg-gray-800'
+        }`;
+        btn.textContent = item.label;
+        btn.onclick = () => { _closeContextMenu(); item.action(); };
+        menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+    _activeMenu = menu;
+
+    // Adjust position if off-screen
+    requestAnimationFrame(() => {
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = (jsEvent.pageX - rect.width) + 'px';
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = (jsEvent.pageY - rect.height) + 'px';
+        }
+    });
+
+    setTimeout(() => document.addEventListener('click', _closeContextMenu, { once: true }), 0);
+}
+
+function _closeContextMenu() {
+    if (_activeMenu) { _activeMenu.remove(); _activeMenu = null; }
+}
+
+function _editSingleEvent(event) {
+    const newTitle = prompt('Tytuł zajęć:', event.title);
+    if (newTitle && newTitle.trim()) {
+        fetch(`/api/events/${event.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: newTitle.trim(),
+                start_time: event.start.toISOString(),
+                end_time: event.end.toISOString(),
+                offering_id: event.extendedProps.offering_id,
+                teacher_id: event.extendedProps.teacher_id,
+                student_id: event.extendedProps.student_id,
+                status: event.extendedProps.status,
+            }),
+        }).then(r => { if (r.ok) event.setProp('title', newTitle.trim()); });
+    }
+}
