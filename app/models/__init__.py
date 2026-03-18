@@ -3,6 +3,7 @@ from app.models.offerings import Offering
 from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.availability import UnavailableBlock
 from app.models.proposals import RescheduleProposal, ProposalStatus
+from app.models.series import RecurringSeries
 
 __all__ = [
     "User", "UserRole",
@@ -10,4 +11,5 @@ __all__ = [
     "ScheduleEvent", "EventStatus",
     "UnavailableBlock",
     "RescheduleProposal", "ProposalStatus",
+    "RecurringSeries",
 ]
