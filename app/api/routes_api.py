@@ -1,5 +1,6 @@
 """JSON API endpoints for FullCalendar hydration and admin data."""
 
+import uuid
 from datetime import datetime
 from uuid import UUID
 
@@ -8,14 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.api.dependencies import get_db
-from app.core.auth import require_teacher_or_admin
+from app.core.auth import get_current_user, require_teacher_or_admin
 from app.models.availability import UnavailableBlock
 from app.models.proposals import RescheduleProposal, ProposalStatus
 from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.users import User, UserRole
 from app.models.offerings import Offering
+from app.models.series import RecurringSeries
 from app.schemas.scheduling import ScheduleEventCreate, ScheduleEventRead
 from app.schemas.offerings import OfferingCreate, OfferingRead
+from app.schemas.series import RecurringSeriesCreate, RecurringSeriesRead
+from app.services.series import generate_events
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -54,12 +58,15 @@ async def update_event(
     event_id: UUID,
     payload: ScheduleEventCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
 ) -> ScheduleEventRead:
-    """Update a schedule event (e.g., drag-and-drop reschedule)."""
+    """Update a single schedule event. Teachers can only update their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != UserRole.ADMIN and event.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your event")
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(event, field, value)
     await db.flush()
@@ -71,12 +78,15 @@ async def update_event(
 async def delete_event(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
 ) -> None:
-    """Delete a schedule event."""
+    """Delete a single schedule event. Teachers can only delete their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role != UserRole.ADMIN and event.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your event")
     await db.delete(event)
     await db.flush()
 
@@ -150,9 +160,14 @@ async def create_availability_block(
 @router.get("/teachers", response_model=list[dict])
 async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
     """Return all teachers for dropdown population."""
-    result = await db.execute(
-        select(User).where(User.role == UserRole.TEACHER)
-    )
+    result = await db.execute(select(User).where(User.role == UserRole.TEACHER))
+    return [{"id": str(u.id), "full_name": u.full_name} for u in result.scalars().all()]
+
+
+@router.get("/students", response_model=list[dict])
+async def get_students(db: AsyncSession = Depends(get_db)) -> list[dict]:
+    """Return all students for dropdown population."""
+    result = await db.execute(select(User).where(User.role == UserRole.STUDENT))
     return [{"id": str(u.id), "full_name": u.full_name} for u in result.scalars().all()]
 
 
@@ -160,23 +175,40 @@ async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
 async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     """Return basic statistics for the admin dashboard."""
     total_events = (await db.execute(select(func.count(ScheduleEvent.id)))).scalar_one()
-    scheduled = (await db.execute(
-        select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.SCHEDULED)
-    )).scalar_one()
-    completed = (await db.execute(
-        select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.COMPLETED)
-    )).scalar_one()
-    cancelled = (await db.execute(
-        select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.CANCELLED)
-    )).scalar_one()
+    scheduled = (
+        await db.execute(
+            select(func.count(ScheduleEvent.id)).where(
+                ScheduleEvent.status == EventStatus.SCHEDULED
+            )
+        )
+    ).scalar_one()
+    completed = (
+        await db.execute(
+            select(func.count(ScheduleEvent.id)).where(
+                ScheduleEvent.status == EventStatus.COMPLETED
+            )
+        )
+    ).scalar_one()
+    cancelled = (
+        await db.execute(
+            select(func.count(ScheduleEvent.id)).where(
+                ScheduleEvent.status == EventStatus.CANCELLED
+            )
+        )
+    ).scalar_one()
     total_offerings = (await db.execute(select(func.count(Offering.id)))).scalar_one()
-    total_teachers = (await db.execute(
-        select(func.count(User.id)).where(User.role == UserRole.TEACHER)
-    )).scalar_one()
-    pending_proposals = (await db.execute(
-        select(func.count(RescheduleProposal.id))
-        .where(RescheduleProposal.status == ProposalStatus.PENDING)
-    )).scalar_one()
+    total_teachers = (
+        await db.execute(
+            select(func.count(User.id)).where(User.role == UserRole.TEACHER)
+        )
+    ).scalar_one()
+    pending_proposals = (
+        await db.execute(
+            select(func.count(RescheduleProposal.id)).where(
+                RescheduleProposal.status == ProposalStatus.PENDING
+            )
+        )
+    ).scalar_one()
     return {
         "total_events": total_events,
         "scheduled": scheduled,
@@ -186,3 +218,163 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
         "total_teachers": total_teachers,
         "pending_proposals": pending_proposals,
     }
+
+
+# ─── Recurring Series ─────────────────────────────────────────────────────────
+
+@router.post("/series", status_code=201)
+async def create_series(
+    payload: RecurringSeriesCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> dict:
+    """Create a recurring series and pre-generate all ScheduleEvent rows."""
+    if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot create series for another teacher")
+
+    series_id = uuid.uuid4()
+
+    try:
+        events = generate_events(payload, series_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    series = RecurringSeries(
+        id=series_id,
+        teacher_id=payload.teacher_id,
+        student_id=payload.student_id,
+        offering_id=payload.offering_id,
+        title=payload.title,
+        start_date=payload.start_date,
+        interval_weeks=payload.interval_weeks,
+        day_slots=[s.model_dump() for s in payload.day_slots],
+        end_date=payload.end_date,
+        end_count=payload.end_count,
+    )
+    db.add(series)
+    db.add_all(events)
+    await db.flush()
+
+    return {"series_id": str(series_id), "events_created": len(events)}
+
+
+@router.get("/series/{series_id}", response_model=RecurringSeriesRead)
+async def get_series(
+    series_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> RecurringSeriesRead:
+    """Return series rule for pre-filling the edit panel."""
+    result = await db.execute(
+        select(RecurringSeries).where(RecurringSeries.id == series_id)
+    )
+    series = result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+    return RecurringSeriesRead.model_validate(series)
+
+
+@router.delete("/series/{series_id}/from/{event_id}", status_code=204)
+async def delete_series_from(
+    series_id: UUID,
+    event_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> None:
+    """Delete an event and all following events in the series."""
+    series_result = await db.execute(
+        select(RecurringSeries).where(RecurringSeries.id == series_id)
+    )
+    series = series_result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+
+    pivot_result = await db.execute(
+        select(ScheduleEvent).where(ScheduleEvent.id == event_id)
+    )
+    pivot = pivot_result.scalar_one_or_none()
+    if not pivot:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    future_result = await db.execute(
+        select(ScheduleEvent).where(
+            ScheduleEvent.series_id == series_id,
+            ScheduleEvent.start_time >= pivot.start_time,
+        )
+    )
+    for event in future_result.scalars().all():
+        await db.delete(event)
+
+    remaining_result = await db.execute(
+        select(func.count(ScheduleEvent.id)).where(ScheduleEvent.series_id == series_id)
+    )
+    if remaining_result.scalar_one() == 0:
+        await db.delete(series)
+
+    await db.flush()
+
+
+@router.patch("/series/{series_id}/from/{event_id}", status_code=200)
+async def update_series_from(
+    series_id: UUID,
+    event_id: UUID,
+    payload: RecurringSeriesCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> dict:
+    """Delete event and all following, re-generate from updated rule starting that ISO week."""
+    from datetime import timedelta
+
+    series_result = await db.execute(
+        select(RecurringSeries).where(RecurringSeries.id == series_id)
+    )
+    series = series_result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+
+    pivot_result = await db.execute(
+        select(ScheduleEvent).where(ScheduleEvent.id == event_id)
+    )
+    pivot = pivot_result.scalar_one_or_none()
+    if not pivot:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Compute ISO-week anchor: Monday of pivot's week
+    pivot_date = pivot.start_time.date()
+    week_monday = pivot_date - timedelta(days=pivot_date.weekday())
+
+    # Delete pivot and all future events in the series
+    future_result = await db.execute(
+        select(ScheduleEvent).where(
+            ScheduleEvent.series_id == series_id,
+            ScheduleEvent.start_time >= pivot.start_time,
+        )
+    )
+    for event in future_result.scalars().all():
+        await db.delete(event)
+    await db.flush()
+
+    # Re-generate from the ISO week anchor using updated rule
+    regenerate_payload = payload.model_copy(update={"start_date": week_monday})
+    try:
+        new_events = generate_events(regenerate_payload, series_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # Update the series rule record
+    series.title = payload.title
+    series.interval_weeks = payload.interval_weeks
+    series.day_slots = [s.model_dump() for s in payload.day_slots]
+    series.end_date = payload.end_date
+    series.end_count = payload.end_count
+
+    db.add_all(new_events)
+    await db.flush()
+
+    return {"series_id": str(series_id), "events_updated": len(new_events)}
