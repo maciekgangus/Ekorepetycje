@@ -220,7 +220,7 @@
                          class="w-16 h-16 object-cover flex-shrink-0">
                     {% else %}
                     <div class="w-16 h-16 bg-navy flex items-center justify-center flex-shrink-0">
-                        <span class="text-cream font-serif text-xl font-bold">
+                        <span class="text-cream font-serif text-2xl font-bold">
                             {{ teacher.full_name[:2].upper() }}
                         </span>
                     </div>
@@ -228,7 +228,7 @@
                     <div>
                         <p class="font-semibold text-ink group-hover:text-navy transition-colors">{{ teacher.full_name }}</p>
                         {% if teacher.specialties %}
-                        <p class="text-xs text-navy/70 mt-0.5">{{ teacher.specialties }}</p>
+                        <p class="text-xs text-navy tracking-wide mt-0.5">{{ teacher.specialties }}</p>
                         {% endif %}
                     </div>
                 </div>
