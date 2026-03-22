@@ -302,8 +302,17 @@ async function spSubmit() {
         });
 
         if (resp.ok) {
+            const data = await resp.json();
             closeSeriesPanel();
             if (window._calendar) window._calendar.refetchEvents();
+            if (data.conflicts && data.conflicts.length > 0) {
+                const byPerson = { teacher: 0, student: 0 };
+                data.conflicts.forEach(c => { byPerson[c.person] = (byPerson[c.person] || 0) + 1; });
+                const parts = [];
+                if (byPerson.teacher) parts.push(`${byPerson.teacher} kolizji z niedostępnością nauczyciela`);
+                if (byPerson.student) parts.push(`${byPerson.student} kolizji z niedostępnością ucznia`);
+                alert(`Seria utworzona, ale wykryto: ${parts.join(', ')}. Sprawdź kalendarz.`);
+            }
         } else {
             const data = await resp.json();
             errText.textContent = data.detail || 'Błąd podczas zapisywania serii.';

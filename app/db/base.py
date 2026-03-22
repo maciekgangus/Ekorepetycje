@@ -7,3 +7,4 @@ from app.models.scheduling import ScheduleEvent  # noqa: F401
 from app.models.availability import UnavailableBlock  # noqa: F401
 from app.models.proposals import RescheduleProposal  # noqa: F401
 from app.models.series import RecurringSeries  # noqa: F401
+from app.models.unavail_series import RecurringUnavailSeries  # noqa: F401

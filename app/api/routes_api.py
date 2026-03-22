@@ -16,10 +16,13 @@ from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.users import User, UserRole
 from app.models.offerings import Offering
 from app.models.series import RecurringSeries
+from app.models.unavail_series import RecurringUnavailSeries
 from app.schemas.scheduling import ScheduleEventCreate, ScheduleEventRead
 from app.schemas.offerings import OfferingCreate, OfferingRead
 from app.schemas.series import RecurringSeriesCreate, RecurringSeriesRead
+from app.schemas.unavailability import RecurringUnavailCreate, RecurringUnavailRead
 from app.services.series import generate_events
+from app.services.unavailability import generate_unavailable_blocks
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -111,14 +114,14 @@ async def create_offering(
     return OfferingRead.model_validate(offering)
 
 
-@router.get("/availability/{teacher_id}", response_model=list[dict])
+@router.get("/availability/{user_id}", response_model=list[dict])
 async def get_availability_blocks(
-    teacher_id: UUID,
+    user_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
-    """Return unavailable blocks for a teacher (for FullCalendar background rendering)."""
+    """Return unavailable blocks for a user (teacher or student) for FullCalendar background rendering."""
     result = await db.execute(
-        select(UnavailableBlock).where(UnavailableBlock.teacher_id == teacher_id)
+        select(UnavailableBlock).where(UnavailableBlock.user_id == user_id)
     )
     return [
         {
@@ -135,18 +138,18 @@ async def get_availability_blocks(
 
 @router.post("/availability", status_code=201)
 async def create_availability_block(
-    teacher_id: UUID = Form(...),
+    user_id: UUID = Form(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
     note: str = Form(""),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
 ) -> dict:
-    # Ownership check: teachers can only mark unavailability for themselves.
-    if current_user.role != UserRole.ADMIN and current_user.id != teacher_id:
+    """Create a single unavailability block for the given user."""
+    if current_user.role != UserRole.ADMIN and current_user.id != user_id:
         raise HTTPException(status_code=403)
     block = UnavailableBlock(
-        teacher_id=teacher_id,
+        user_id=user_id,
         start_time=datetime.fromisoformat(start_time),
         end_time=datetime.fromisoformat(end_time),
         note=note or None,
@@ -261,7 +264,44 @@ async def create_series(
     db.add_all(events)
     await db.flush()
 
-    return {"series_id": str(series_id), "events_created": len(events)}
+    # ── Conflict detection (non-blocking — warnings only) ────────────────────
+    conflicts: list[dict] = []
+    if events:
+        min_start = min(e.start_time for e in events)
+        max_end = max(e.end_time for e in events)
+
+        async def _get_blocks(uid: UUID) -> list:
+            r = await db.execute(
+                select(UnavailableBlock).where(
+                    UnavailableBlock.user_id == uid,
+                    UnavailableBlock.end_time > min_start,
+                    UnavailableBlock.start_time < max_end,
+                )
+            )
+            return r.scalars().all()
+
+        teacher_blocks = await _get_blocks(payload.teacher_id)
+        student_blocks = await _get_blocks(payload.student_id) if payload.student_id else []
+
+        for event in events:
+            for block in teacher_blocks:
+                if block.start_time < event.end_time and block.end_time > event.start_time:
+                    conflicts.append({
+                        "event_start": event.start_time.isoformat(),
+                        "person": "teacher",
+                        "note": block.note or "Niedostępność",
+                    })
+                    break
+            for block in student_blocks:
+                if block.start_time < event.end_time and block.end_time > event.start_time:
+                    conflicts.append({
+                        "event_start": event.start_time.isoformat(),
+                        "person": "student",
+                        "note": block.note or "Niedostępność",
+                    })
+                    break
+
+    return {"series_id": str(series_id), "events_created": len(events), "conflicts": conflicts}
 
 
 @router.get("/series/{series_id}", response_model=RecurringSeriesRead)
@@ -392,3 +432,162 @@ async def update_series_from(
     await db.flush()
 
     return {"series_id": str(series_id), "events_updated": len(new_events)}
+
+
+# ─── Recurring Unavailability Series ──────────────────────────────────────────
+
+@router.post("/unavailability-series", status_code=201)
+async def create_unavail_series(
+    payload: RecurringUnavailCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> dict:
+    """Create a recurring unavailability series and pre-generate all UnavailableBlock rows."""
+    if current_user.role != UserRole.ADMIN and payload.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot create unavailability for another user")
+
+    series_id = uuid.uuid4()
+
+    try:
+        blocks = generate_unavailable_blocks(payload, series_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    if not blocks:
+        raise HTTPException(status_code=422, detail="Series would generate zero blocks.")
+
+    series = RecurringUnavailSeries(
+        id=series_id,
+        user_id=payload.user_id,
+        note=payload.note,
+        start_date=payload.start_date,
+        interval_weeks=payload.interval_weeks,
+        day_slots=[s.model_dump() for s in payload.day_slots],
+        end_date=payload.end_date,
+        end_count=payload.end_count,
+    )
+    db.add(series)
+    db.add_all(blocks)
+    await db.flush()
+
+    return {"series_id": str(series_id), "blocks_created": len(blocks)}
+
+
+@router.get("/unavailability-series/{series_id}", response_model=RecurringUnavailRead)
+async def get_unavail_series(
+    series_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> RecurringUnavailRead:
+    """Return unavailability series rule for pre-filling the edit panel."""
+    result = await db.execute(
+        select(RecurringUnavailSeries).where(RecurringUnavailSeries.id == series_id)
+    )
+    series = result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+    return RecurringUnavailRead.model_validate(series)
+
+
+@router.delete("/unavailability-series/{series_id}/from/{block_id}", status_code=204)
+async def delete_unavail_series_from(
+    series_id: UUID,
+    block_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> None:
+    """Delete a block and all following blocks in the unavailability series."""
+    series_result = await db.execute(
+        select(RecurringUnavailSeries).where(RecurringUnavailSeries.id == series_id)
+    )
+    series = series_result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+
+    pivot_result = await db.execute(
+        select(UnavailableBlock).where(UnavailableBlock.id == block_id)
+    )
+    pivot = pivot_result.scalar_one_or_none()
+    if not pivot or pivot.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Block not found in series")
+
+    future_result = await db.execute(
+        select(UnavailableBlock).where(
+            UnavailableBlock.series_id == series_id,
+            UnavailableBlock.start_time >= pivot.start_time,
+        )
+    )
+    for block in future_result.scalars().all():
+        await db.delete(block)
+    await db.flush()
+
+    remaining = (await db.execute(
+        select(func.count(UnavailableBlock.id)).where(UnavailableBlock.series_id == series_id)
+    )).scalar_one()
+    if remaining == 0:
+        await db.delete(series)
+        await db.flush()
+
+
+@router.patch("/unavailability-series/{series_id}/from/{block_id}", status_code=200)
+async def update_unavail_series_from(
+    series_id: UUID,
+    block_id: UUID,
+    payload: RecurringUnavailCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_teacher_or_admin),
+) -> dict:
+    """Delete block and all following, re-generate from updated rule starting that ISO week."""
+    series_result = await db.execute(
+        select(RecurringUnavailSeries).where(RecurringUnavailSeries.id == series_id)
+    )
+    series = series_result.scalar_one_or_none()
+    if not series:
+        raise HTTPException(status_code=404, detail="Series not found")
+    if current_user.role != UserRole.ADMIN and series.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not your series")
+    if current_user.role != UserRole.ADMIN and payload.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot reassign series to another user")
+
+    pivot_result = await db.execute(
+        select(UnavailableBlock).where(UnavailableBlock.id == block_id)
+    )
+    pivot = pivot_result.scalar_one_or_none()
+    if not pivot or pivot.series_id != series_id:
+        raise HTTPException(status_code=404, detail="Block not found in series")
+
+    pivot_date = pivot.start_time.date()
+    week_monday = pivot_date - timedelta(days=pivot_date.weekday())
+
+    future_result = await db.execute(
+        select(UnavailableBlock).where(
+            UnavailableBlock.series_id == series_id,
+            UnavailableBlock.start_time >= pivot.start_time,
+        )
+    )
+    for block in future_result.scalars().all():
+        await db.delete(block)
+    await db.flush()
+
+    regenerate_payload = payload.model_copy(update={"start_date": week_monday})
+    try:
+        new_blocks = generate_unavailable_blocks(regenerate_payload, series_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    series.user_id = payload.user_id
+    series.note = payload.note
+    series.start_date = week_monday
+    series.interval_weeks = payload.interval_weeks
+    series.day_slots = [s.model_dump() for s in payload.day_slots]
+    series.end_date = payload.end_date
+    series.end_count = payload.end_count
+
+    db.add_all(new_blocks)
+    await db.flush()
+
+    return {"series_id": str(series_id), "blocks_updated": len(new_blocks)}

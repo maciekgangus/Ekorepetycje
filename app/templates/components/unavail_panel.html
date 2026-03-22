@@ -1,0 +1,114 @@
+<!-- Recurring Unavailability Slide-in Panel -->
+<!-- Usage: {% include "components/unavail_panel.html" %} — requires user object in context -->
+<div id="unavail-panel"
+     class="fixed inset-y-0 right-0 w-full sm:w-[440px] bg-gray-950 border-l border-gray-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col"
+     data-user-id="{{ user.id }}">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+        <h2 class="text-lg font-semibold text-white" id="unavail-panel-title">Nowa seria niedostępności</h2>
+        <button onclick="closeUnavailPanel()" class="text-gray-400 hover:text-white transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+        <!-- Note -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Notatka (opcjonalnie)</label>
+            <input type="text" id="up-note" maxlength="255"
+                   class="w-full bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-green-500"
+                   placeholder="np. Wykłady, ćwiczenia, szkoła...">
+        </div>
+
+        <!-- Start date -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide">Tydzień startowy</label>
+            <input type="date" id="up-start-date"
+                   class="w-full bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-green-500">
+        </div>
+
+        <!-- Interval -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Częstotliwość</label>
+            <div class="flex gap-2">
+                <button type="button" onclick="upSetInterval(1)" data-interval="1"
+                        class="up-interval-btn flex-1 py-2 rounded-xl text-sm font-medium border border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-400 transition-colors">
+                    Co tydzień
+                </button>
+                <button type="button" onclick="upSetInterval(2)" data-interval="2"
+                        class="up-interval-btn flex-1 py-2 rounded-xl text-sm font-medium border border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-400 transition-colors">
+                    Co 2 tygodnie
+                </button>
+                <button type="button" onclick="upSetInterval(0)" data-interval="0"
+                        class="up-interval-btn flex-1 py-2 rounded-xl text-sm font-medium border border-gray-700 text-gray-300 hover:border-green-500 hover:text-green-400 transition-colors">
+                    Własny
+                </button>
+            </div>
+            <div id="up-custom-interval" class="hidden mt-2">
+                <input type="number" id="up-interval-value" min="1" max="52" value="3"
+                       class="w-full bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2 rounded-xl focus:outline-none focus:ring-1 focus:ring-green-500"
+                       placeholder="Co ile tygodni?">
+            </div>
+        </div>
+
+        <!-- Time slots -->
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-medium text-gray-400 uppercase tracking-wide">Godziny bloku</label>
+                <button type="button" onclick="upAddSlot()"
+                        class="text-xs text-green-400 hover:text-green-300 transition-colors">+ Dodaj slot</button>
+            </div>
+            <div id="up-slots" class="space-y-2"></div>
+        </div>
+
+        <!-- End condition -->
+        <div>
+            <label class="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">Zakończenie serii</label>
+            <div class="space-y-2">
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="radio" name="up-end-type" value="count" checked onchange="upToggleEnd()"
+                           class="text-green-500 focus:ring-green-500">
+                    <span class="text-sm text-gray-300">Liczba bloków</span>
+                    <input type="number" id="up-end-count" min="1" max="200" value="30"
+                           class="ml-auto w-20 bg-gray-900 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none">
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                    <input type="radio" name="up-end-type" value="date" onchange="upToggleEnd()"
+                           class="text-green-500 focus:ring-green-500">
+                    <span class="text-sm text-gray-300">Data końcowa</span>
+                    <input type="date" id="up-end-date" disabled
+                           class="ml-auto bg-gray-900 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none disabled:opacity-40">
+                </label>
+            </div>
+        </div>
+
+        <!-- Preview -->
+        <div class="bg-gray-900/60 border border-gray-800 rounded-xl px-4 py-3">
+            <p class="text-xs text-gray-400">Zostanie utworzonych: <span id="up-preview-count" class="text-white font-semibold">—</span> bloków</p>
+        </div>
+
+        <!-- Error -->
+        <div id="up-error" class="hidden bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+            <p class="text-sm text-red-400" id="up-error-text"></p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-800">
+        <button id="up-submit-btn" onclick="upSubmit()"
+                class="w-full bg-green-500 hover:bg-green-400 text-gray-950 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+            Utwórz serię niedostępności
+        </button>
+    </div>
+</div>
+
+<!-- Backdrop -->
+<div id="unavail-backdrop"
+     onclick="closeUnavailPanel()"
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden">
+</div>

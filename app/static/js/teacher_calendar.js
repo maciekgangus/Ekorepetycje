@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 url: `/api/availability/${window.TEACHER_ID}`,
                 display: 'background',
                 color: '#6b7280',
+                failure: function () { console.error('Failed to load availability'); },
             },
         ],
 

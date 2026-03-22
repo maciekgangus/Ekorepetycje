@@ -17,6 +17,17 @@ from app.models.users import User, UserRole
 router = APIRouter(prefix="/student", tags=["student"])
 
 
+@router.get("/calendar", response_class=HTMLResponse)
+async def student_calendar(
+    request: Request,
+    current_user: User = Depends(require_role(UserRole.STUDENT)),
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "student/calendar.html",
+        {"request": request, "user": current_user},
+    )
+
+
 @router.get("/", response_class=HTMLResponse)
 async def student_dashboard(
     request: Request,

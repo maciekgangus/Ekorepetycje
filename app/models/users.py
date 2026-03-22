@@ -15,6 +15,8 @@ if TYPE_CHECKING:
     from app.models.offerings import Offering
     from app.models.scheduling import ScheduleEvent
     from app.models.series import RecurringSeries
+    from app.models.availability import UnavailableBlock
+    from app.models.unavail_series import RecurringUnavailSeries
 
 
 class UserRole(str, enum.Enum):
@@ -53,4 +55,10 @@ class User(Base):
     )
     student_series: Mapped[list["RecurringSeries"]] = relationship(
         "RecurringSeries", back_populates="student", foreign_keys="[RecurringSeries.student_id]"
+    )
+    unavailable_blocks: Mapped[list["UnavailableBlock"]] = relationship(
+        "UnavailableBlock", back_populates="user", foreign_keys="[UnavailableBlock.user_id]"
+    )
+    unavail_series: Mapped[list["RecurringUnavailSeries"]] = relationship(
+        "RecurringUnavailSeries", back_populates="user"
     )
