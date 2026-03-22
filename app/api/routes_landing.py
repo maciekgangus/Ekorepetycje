@@ -1,5 +1,7 @@
 """HTML routes for the public-facing landing pages (Jinja2 + HTMX)."""
 
+import uuid
+
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
