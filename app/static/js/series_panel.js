@@ -61,6 +61,23 @@ function openSeriesPanelEdit(seriesId, fromEventId) {
         });
 }
 
+/** Open series panel pre-filled with a specific date/time (from calendar drag or click). */
+function openSeriesPanelWithTime(dateStr, hour, minute, durationMinutes) {
+    openSeriesPanel();
+    document.getElementById('sp-start-date').value = dateStr;
+    const rows = document.querySelectorAll('#sp-slots > div');
+    if (rows.length > 0) {
+        const row = rows[0];
+        // Map JS day (0=Sun) to our convention (0=Mon)
+        const dow = (new Date(dateStr + 'T12:00:00').getDay() + 6) % 7;
+        row.querySelector('.sp-slot-day').value = dow;
+        row.querySelector('.sp-slot-time').value =
+            String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+        if (durationMinutes) row.querySelector('.sp-slot-duration').value = Math.min(480, Math.max(15, durationMinutes));
+    }
+    spUpdatePreview();
+}
+
 function closeSeriesPanel() {
     const panel = document.getElementById('series-panel');
     const backdrop = document.getElementById('series-backdrop');
@@ -163,13 +180,13 @@ function spAddSlot(prefill = null) {
     const slot = document.createElement('div');
     slot.className = 'flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-3 py-2';
     slot.innerHTML = `
-        <select class="sp-slot-day bg-transparent text-white text-sm focus:outline-none" onchange="spUpdatePreview()">
+        <select class="sp-slot-day bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 cursor-pointer" onchange="spUpdatePreview()">
             ${DAY_NAMES.map((n, i) => `<option value="${i}"${prefill && prefill.day === i ? ' selected' : ''}>${n}</option>`).join('')}
         </select>
-        <input type="time" class="sp-slot-time bg-transparent text-white text-sm focus:outline-none w-24"
+        <input type="time" class="sp-slot-time bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 w-28"
                value="${prefill ? String(prefill.hour).padStart(2,'0') + ':' + String(prefill.minute).padStart(2,'0') : '17:00'}"
                onchange="spUpdatePreview()">
-        <input type="number" class="sp-slot-duration bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg w-20 focus:outline-none"
+        <input type="number" class="sp-slot-duration bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg w-20 focus:outline-none focus:ring-1 focus:ring-green-500"
                value="${prefill ? prefill.duration_minutes : 60}" min="15" max="480" placeholder="min"
                onchange="spUpdatePreview()">
         <span class="text-xs text-gray-500">min</span>

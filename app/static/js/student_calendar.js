@@ -54,17 +54,101 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         },
 
-        // Students can click to see unavailability series context menu on background blocks
-        eventClick: function (info) {
-            if (info.event.display === 'background') {
-                _showUnavailContextMenu(info.event, info.jsEvent);
-            }
+        // Click on event (lesson) → tooltip, no edits
+        eventClick: function (info) { /* read-only for students */ },
+
+        // Click/drag on empty slot → open unavailability panel
+        selectable: true,
+        selectMinDistance: 10,
+        select: function (info) {
+            const durationMin = Math.round((info.end - info.start) / 60000);
+            const dateStr = info.startStr.split('T')[0];
+            _openUnavailWithTime(dateStr, info.start.getHours(), info.start.getMinutes(), durationMin);
+            calendar.unselect();
+        },
+        dateClick: function (info) {
+            const dateStr = info.dateStr.split('T')[0];
+            _openUnavailWithTime(dateStr, info.date.getHours(), info.date.getMinutes(), 90);
+        },
+
+        eventMouseEnter: function (info) { _showStudentTooltip(info.event, info.jsEvent); },
+        eventMouseLeave: function () { _hideStudentTooltip(); },
+
+        eventsSet: function (events) {
+            const statsEl = document.getElementById('fc-week-stats');
+            if (!statsEl) return;
+            const view = calendar.view;
+            const visible = events.filter(e => e.display !== 'background' && e.start >= view.activeStart && e.start < view.activeEnd);
+            const totalMs = visible.reduce((s, e) => s + (e.end ? e.end - e.start : 3600000), 0);
+            const h = Math.floor(totalMs / 3600000);
+            const m = Math.floor((totalMs % 3600000) / 60000);
+            statsEl.textContent = visible.length ? `${visible.length} zajęć · ${h}h${m > 0 ? ` ${m}min` : ''}` : '';
         },
     });
 
     calendar.render();
     window._calendar = calendar;
+
+    calendarEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        const slotEl = e.target.closest('.fc-timegrid-slot');
+        const dataTime = slotEl ? slotEl.getAttribute('data-time') : '';
+        const [h, m] = dataTime ? dataTime.slice(0, 5).split(':').map(Number) : [9, 0];
+        const colEl = e.target.closest('[data-date]');
+        const dateStr = colEl ? colEl.getAttribute('data-date') : new Date().toISOString().split('T')[0];
+        _openUnavailWithTime(dateStr, h, m, 90);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && typeof closeUnavailPanel === 'function') closeUnavailPanel();
+    });
+}
+
+function _openUnavailWithTime(dateStr, hour, minute, durationMin) {
+    openUnavailPanel();
+    document.getElementById('up-start-date').value = dateStr;
+    const rows = document.querySelectorAll('#up-slots > div');
+    if (rows.length > 0) {
+        const row = rows[0];
+        const dow = (new Date(dateStr + 'T12:00:00').getDay() + 6) % 7;
+        row.querySelector('.up-slot-day').value = dow;
+        row.querySelector('.up-slot-time').value =
+            String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+        if (durationMin) row.querySelector('.up-slot-duration').value = Math.min(480, Math.max(15, durationMin));
+    }
+    upUpdatePreview();
 });
+
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
+
+function _showStudentTooltip(event, jsEvent) {
+    let tip = document.getElementById('fc-tooltip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'fc-tooltip';
+        tip.className = 'fixed z-[70] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl px-4 py-3 text-sm pointer-events-none max-w-[240px]';
+        document.body.appendChild(tip);
+    }
+    const status = event.extendedProps?.status;
+    const statusPl = { scheduled: 'Zaplanowane', completed: 'Ukończone', cancelled: 'Odwołane' };
+    const dotColor = status === 'completed' ? '#6b7280' : status === 'cancelled' ? '#ef4444' : '#22c55e';
+    tip.innerHTML = `
+        <p class="font-semibold text-white mb-1 leading-tight">${event.title}</p>
+        ${status ? `<p class="text-xs text-gray-400 flex items-center gap-1.5">
+            <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span>
+            ${statusPl[status] || status}</p>` : ''}
+        ${event.extendedProps?.series_id ? '<p class="text-xs text-green-400 mt-1">↻ Zajęcia cykliczne</p>' : ''}
+    `;
+    tip.style.display = 'block';
+    const x = jsEvent.clientX + 14;
+    tip.style.left = (x + 240 > window.innerWidth ? x - 260 : x) + 'px';
+    tip.style.top = Math.min(jsEvent.clientY - 10, window.innerHeight - 120) + 'px';
+}
+
+function _hideStudentTooltip() {
+    const tip = document.getElementById('fc-tooltip');
+    if (tip) tip.style.display = 'none';
+}
 
 // ─── Context menu for unavailability blocks ───────────────────────────────────
 

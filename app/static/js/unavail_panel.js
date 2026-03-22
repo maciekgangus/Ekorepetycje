@@ -111,13 +111,13 @@ function upAddSlot(prefill = null) {
     const slot = document.createElement('div');
     slot.className = 'flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-xl px-3 py-2';
     slot.innerHTML = `
-        <select class="up-slot-day bg-transparent text-white text-sm focus:outline-none" onchange="upUpdatePreview()">
+        <select class="up-slot-day bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 cursor-pointer" onchange="upUpdatePreview()">
             ${UP_DAY_NAMES.map((n, i) => `<option value="${i}"${prefill && prefill.day === i ? ' selected' : ''}>${n}</option>`).join('')}
         </select>
-        <input type="time" class="up-slot-time bg-transparent text-white text-sm focus:outline-none w-24"
+        <input type="time" class="up-slot-time bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg focus:outline-none focus:ring-1 focus:ring-green-500 w-28"
                value="${prefill ? String(prefill.hour).padStart(2,'0') + ':' + String(prefill.minute).padStart(2,'0') : '08:00'}"
                onchange="upUpdatePreview()">
-        <input type="number" class="up-slot-duration bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg w-20 focus:outline-none"
+        <input type="number" class="up-slot-duration bg-gray-800 border border-gray-700 text-white text-sm px-2 py-1 rounded-lg w-20 focus:outline-none focus:ring-1 focus:ring-green-500"
                value="${prefill ? prefill.duration_minutes : 90}" min="15" max="480"
                onchange="upUpdatePreview()">
         <span class="text-xs text-gray-500">min</span>

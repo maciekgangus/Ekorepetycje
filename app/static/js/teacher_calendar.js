@@ -1,6 +1,6 @@
 /**
  * FullCalendar initialization for the teacher calendar view.
- * Teacher ID is injected from the template as window.TEACHER_ID.
+ * window.TEACHER_ID is injected from the template.
  */
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
@@ -25,8 +25,9 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         allDaySlot: false,
         nowIndicator: true,
-        editable: false,  // teachers don't drag-drop; they use proposals
-        selectable: false,
+        editable: false,
+        selectable: true,
+        selectMinDistance: 10,
 
         eventSources: [
             {
@@ -60,25 +61,120 @@ document.addEventListener('DOMContentLoaded', function () {
             };
         },
 
+        // ── Drag-to-create on empty slot ──────────────────────────────────────
+        select: function (info) {
+            const durationMin = Math.round((info.end - info.start) / 60000);
+            const dateStr = info.startStr.split('T')[0];
+            openSeriesPanelWithTime(dateStr, info.start.getHours(), info.start.getMinutes(), durationMin);
+            calendar.unselect();
+        },
+
+        dateClick: function (info) {
+            openSeriesPanelWithTime(
+                info.dateStr.split('T')[0],
+                info.date.getHours(),
+                info.date.getMinutes(),
+                60
+            );
+        },
+
         eventClick: function (info) {
+            info.jsEvent.preventDefault();
             _showTeacherContextMenu(info.event, info.jsEvent);
         },
+
+        eventMouseEnter: function (info) { _showTeacherTooltip(info.event, info.jsEvent); },
+        eventMouseLeave: function () { _hideTeacherTooltip(); },
+
+        eventsSet: function (events) { _updateTeacherWeekStats(events, calendar); },
     });
 
     calendar.render();
     window._calendar = calendar;
+
+    // Right-click on empty slot → new series
+    calendarEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        _hideTeacherTooltip();
+        const eventEl = e.target.closest('.fc-event');
+        if (!eventEl) {
+            const slotEl = e.target.closest('.fc-timegrid-slot');
+            const dataTime = slotEl ? slotEl.getAttribute('data-time') : '';
+            const [h, m] = dataTime ? dataTime.slice(0, 5).split(':').map(Number) : [9, 0];
+            const colEl = e.target.closest('[data-date]');
+            const dateStr = colEl ? colEl.getAttribute('data-date') : new Date().toISOString().split('T')[0];
+            openSeriesPanelWithTime(dateStr, h, m, 60);
+        }
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closeSeriesPanel();
+            if (typeof closeUnavailPanel === 'function') closeUnavailPanel();
+        }
+    });
 });
 
-// ─── Context menu (teacher-scoped) ───────────────────────────────────────────
+// ─── Tooltip ─────────────────────────────────────────────────────────────────
 
-let _activeMenu = null;
+const _T_STATUS_PL = { scheduled: 'Zaplanowane', completed: 'Ukończone', cancelled: 'Odwołane' };
+
+function _showTeacherTooltip(event, jsEvent) {
+    let tip = document.getElementById('fc-tooltip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'fc-tooltip';
+        tip.className = 'fixed z-[70] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl px-4 py-3 text-sm pointer-events-none max-w-[240px]';
+        document.body.appendChild(tip);
+    }
+    const status = event.extendedProps.status;
+    const dotColor = status === 'completed' ? '#6b7280' : status === 'cancelled' ? '#ef4444' : '#22c55e';
+    tip.innerHTML = `
+        <p class="font-semibold text-white mb-1 leading-tight">${event.title}</p>
+        <p class="text-xs text-gray-400 flex items-center gap-1.5">
+            <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span>
+            ${_T_STATUS_PL[status] || status}
+        </p>
+        ${event.extendedProps.series_id ? '<p class="text-xs text-green-400 mt-1">↻ Zajęcia cykliczne</p>' : ''}
+    `;
+    tip.style.display = 'block';
+    const x = jsEvent.clientX + 14;
+    const y = jsEvent.clientY - 10;
+    tip.style.left = (x + 240 > window.innerWidth ? x - 260 : x) + 'px';
+    tip.style.top = Math.min(y, window.innerHeight - 120) + 'px';
+}
+
+function _hideTeacherTooltip() {
+    const tip = document.getElementById('fc-tooltip');
+    if (tip) tip.style.display = 'none';
+}
+
+// ─── Week stats ───────────────────────────────────────────────────────────────
+
+function _updateTeacherWeekStats(events, calendar) {
+    const statsEl = document.getElementById('fc-week-stats');
+    if (!statsEl) return;
+    const view = calendar.view;
+    const visible = events.filter(e =>
+        e.display !== 'background' && e.start >= view.activeStart && e.start < view.activeEnd
+    );
+    const totalMs = visible.reduce((s, e) => s + (e.end ? e.end - e.start : 3600000), 0);
+    const h = Math.floor(totalMs / 3600000);
+    const m = Math.floor((totalMs % 3600000) / 60000);
+    statsEl.textContent = `${visible.length} zajęć · ${h}h${m > 0 ? ` ${m}min` : ''}`;
+}
+
+// ─── Context menu ─────────────────────────────────────────────────────────────
+
+let _activeTeacherMenu = null;
 
 function _showTeacherContextMenu(event, jsEvent) {
-    if (_activeMenu) { _activeMenu.remove(); _activeMenu = null; }
+    if (_activeTeacherMenu) { _activeTeacherMenu.remove(); _activeTeacherMenu = null; }
+    _hideTeacherTooltip();
 
     const seriesId = event.extendedProps.series_id;
     const menu = document.createElement('div');
-    menu.className = 'fixed z-50 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1 min-w-[220px] text-sm';
+    menu.className = 'fixed z-50 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1.5 min-w-[220px] text-sm';
     menu.style.left = jsEvent.pageX + 'px';
     menu.style.top = jsEvent.pageY + 'px';
 
@@ -124,25 +220,20 @@ function _showTeacherContextMenu(event, jsEvent) {
             item.danger ? 'text-red-400 hover:bg-red-500/10' : 'text-gray-200 hover:bg-gray-800'
         }`;
         btn.textContent = item.label;
-        btn.onclick = () => { menu.remove(); _activeMenu = null; item.action(); };
+        btn.onclick = () => { menu.remove(); _activeTeacherMenu = null; item.action(); };
         menu.appendChild(btn);
     });
 
     document.body.appendChild(menu);
-    _activeMenu = menu;
+    _activeTeacherMenu = menu;
 
-    // Adjust off-screen
     requestAnimationFrame(() => {
         const rect = menu.getBoundingClientRect();
-        if (rect.right > window.innerWidth) {
-            menu.style.left = (jsEvent.pageX - rect.width) + 'px';
-        }
-        if (rect.bottom > window.innerHeight) {
-            menu.style.top = (jsEvent.pageY - rect.height) + 'px';
-        }
+        if (rect.right > window.innerWidth) menu.style.left = (jsEvent.pageX - rect.width) + 'px';
+        if (rect.bottom > window.innerHeight) menu.style.top = (jsEvent.pageY - rect.height) + 'px';
     });
 
     setTimeout(() => document.addEventListener('click', () => {
-        if (_activeMenu) { _activeMenu.remove(); _activeMenu = null; }
+        if (_activeTeacherMenu) { _activeTeacherMenu.remove(); _activeTeacherMenu = null; }
     }, { once: true }), 0);
 }
