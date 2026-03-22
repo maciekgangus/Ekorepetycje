@@ -11,7 +11,8 @@
 {% block content %}
 
 <!-- ─── HERO ──────────────────────────────────────────────────────────────── -->
-<section id="hero" class="min-h-screen pt-16 px-6 grid grid-cols-1 lg:grid-cols-5 gap-0 items-stretch">
+<section id="hero" class="min-h-screen pt-16 px-6">
+<div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-5 gap-0 items-stretch min-h-[calc(100vh-4rem)]">
 
     <!-- Left column -->
     <div class="lg:col-span-3 flex flex-col justify-center py-20 lg:py-0 lg:pr-16 border-r border-ink/10">
@@ -82,6 +83,7 @@
         </div>
 
     </div>
+</div>
 </section>
 
 <!-- Divider rule -->
@@ -96,45 +98,6 @@
             <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Przedmioty</h2>
         </div>
 
-        <!-- Filter tabs -->
-        <div class="flex flex-wrap gap-2 mb-10 border-b border-ink/10 pb-6">
-            <button
-                class="px-4 py-2 text-sm border border-navy bg-navy text-cream tracking-wide transition-colors subject-filter active"
-                hx-get="/subjects?level=all"
-                hx-target="#subjects-grid"
-                hx-swap="innerHTML"
-                hx-indicator="#subjects-loading">
-                Wszystkie
-            </button>
-            <button
-                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
-                hx-get="/subjects?level=podstawowa"
-                hx-target="#subjects-grid"
-                hx-swap="innerHTML"
-                hx-indicator="#subjects-loading">
-                Podstawówka
-            </button>
-            <button
-                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
-                hx-get="/subjects?level=liceum"
-                hx-target="#subjects-grid"
-                hx-swap="innerHTML"
-                hx-indicator="#subjects-loading">
-                Liceum
-            </button>
-            <button
-                class="px-4 py-2 text-sm border border-ink/20 hover:border-navy hover:text-navy text-ink/60 tracking-wide transition-colors subject-filter"
-                hx-get="/subjects?level=studia"
-                hx-target="#subjects-grid"
-                hx-swap="innerHTML"
-                hx-indicator="#subjects-loading">
-                Studia
-            </button>
-            <span id="subjects-loading" class="htmx-indicator ml-auto self-center text-xs text-ink/40">
-                Ładowanie…
-            </span>
-        </div>
-
         <!-- Subject cards grid -->
         <div id="subjects-grid" class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
 
@@ -147,7 +110,7 @@
                     </svg>
                 </div>
                 <h3 class="font-serif text-xl font-semibold text-ink mb-3">
-                    Matematyka &amp; Fizyka
+                    Matematyka i Fizyka
                 </h3>
                 <p class="text-sm text-ink/55 leading-relaxed mb-6">
                     Od równań liniowych po rachunek całkowy. Przygotowanie do matury podstawowej
@@ -158,6 +121,13 @@
                     <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
                     <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
                 </div>
+                <a href="/przedmioty/matematyka"
+                   class="mt-4 inline-flex items-center gap-1 text-xs text-navy font-medium hover:underline">
+                    Dowiedz się więcej
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
             </div>
 
             <!-- Programming & IT -->
@@ -169,7 +139,7 @@
                     </svg>
                 </div>
                 <h3 class="font-serif text-xl font-semibold text-ink mb-3">
-                    Programowanie &amp; IT
+                    Informatyka i IT
                 </h3>
                 <p class="text-sm text-ink/55 leading-relaxed mb-6">
                     Python, JavaScript, algorytmy i struktury danych. Przygotowanie do matury
@@ -179,6 +149,13 @@
                     <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
                     <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
                 </div>
+                <a href="/przedmioty/informatyka"
+                   class="mt-4 inline-flex items-center gap-1 text-xs text-navy font-medium hover:underline">
+                    Dowiedz się więcej
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
             </div>
 
             <!-- Foreign Languages -->
@@ -201,6 +178,13 @@
                     <span class="text-xs border border-ink/15 text-ink/50 px-3 py-1 tracking-wide">liceum</span>
                     <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">studia</span>
                 </div>
+                <a href="/przedmioty/jezyki-obce"
+                   class="mt-4 inline-flex items-center gap-1 text-xs text-navy font-medium hover:underline">
+                    Dowiedz się więcej
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
             </div>
 
         </div><!-- #subjects-grid -->
