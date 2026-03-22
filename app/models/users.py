@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import uuid
 import enum
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Enum as SAEnum
+from sqlalchemy import String, Text, DateTime, Enum as SAEnum, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
@@ -40,6 +41,14 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    photo_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    specialties: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
 
     offerings: Mapped[list["Offering"]] = relationship(
         "Offering", back_populates="teacher", foreign_keys="[Offering.teacher_id]"
