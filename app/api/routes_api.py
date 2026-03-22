@@ -242,6 +242,9 @@ async def create_series(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
+    if not events:
+        raise HTTPException(status_code=422, detail="Series would generate zero events. Check start_date and end_date.")
+
     series = RecurringSeries(
         id=series_id,
         teacher_id=payload.teacher_id,
@@ -340,6 +343,8 @@ async def update_series_from(
         raise HTTPException(status_code=404, detail="Series not found")
     if current_user.role != UserRole.ADMIN and series.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your series")
+    if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Cannot reassign series to another teacher")
 
     pivot_result = await db.execute(
         select(ScheduleEvent).where(ScheduleEvent.id == event_id)
@@ -377,6 +382,7 @@ async def update_series_from(
     series.student_id = payload.student_id
     series.offering_id = payload.offering_id
     series.title = payload.title
+    series.start_date = week_monday
     series.interval_weeks = payload.interval_weeks
     series.day_slots = [s.model_dump() for s in payload.day_slots]
     series.end_date = payload.end_date

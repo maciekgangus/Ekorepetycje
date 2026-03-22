@@ -35,11 +35,13 @@ def generate_events(
 
     events: list[ScheduleEvent] = []
     week_offset = 0
+    # Sort slots by day so end_count counts chronologically within each week
+    sorted_slots = sorted(payload.day_slots, key=lambda s: (s.day, s.hour, s.minute))
 
     while True:
         current_monday = week_monday + timedelta(weeks=week_offset * payload.interval_weeks)
 
-        for slot in payload.day_slots:
+        for slot in sorted_slots:
             slot_date = current_monday + timedelta(days=slot.day)
             slot_start = datetime(
                 slot_date.year,

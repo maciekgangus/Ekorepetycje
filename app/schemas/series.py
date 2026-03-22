@@ -34,11 +34,13 @@ class RecurringSeriesCreate(BaseModel):
 
     @model_validator(mode="after")
     def exactly_one_end_condition(self) -> "RecurringSeriesCreate":
-        """Exactly one of end_date or end_count must be provided."""
+        """Exactly one of end_date or end_count must be provided, and end_date must not precede start_date."""
         has_date = self.end_date is not None
         has_count = self.end_count is not None
         if has_date == has_count:  # both or neither
             raise ValueError("Provide exactly one of end_date or end_count.")
+        if has_date and self.end_date < self.start_date:
+            raise ValueError("end_date must be on or after start_date.")
         return self
 
 

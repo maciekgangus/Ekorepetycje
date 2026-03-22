@@ -55,11 +55,23 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         eventDrop: async function (info) {
+            if (info.event.extendedProps.series_id) {
+                if (!confirm('Ta lekcja należy do serii. Czy przenieść tylko tę lekcję (odłączy ją od serii)?')) {
+                    info.revert();
+                    return;
+                }
+            }
             const ok = await _patchEvent(info.event);
             if (!ok) info.revert();
         },
 
         eventResize: async function (info) {
+            if (info.event.extendedProps.series_id) {
+                if (!confirm('Ta lekcja należy do serii. Czy zmienić czas tylko tej lekcji (odłączy ją od serii)?')) {
+                    info.revert();
+                    return;
+                }
+            }
             const ok = await _patchEvent(info.event);
             if (!ok) info.revert();
         },

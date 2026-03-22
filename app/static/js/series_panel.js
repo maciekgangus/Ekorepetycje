@@ -22,7 +22,9 @@ function openSeriesPanel() {
     panel.classList.remove('translate-x-full');
     backdrop.classList.remove('hidden');
     document.getElementById('series-panel-title').textContent = 'Nowa seria zajęć';
+    document.getElementById('sp-submit-btn').textContent = 'Utwórz serię';
     window._seriesPanelMode = 'create';
+    document.getElementById('sp-slots').innerHTML = '';
     _spInitDropdowns();
     spAddSlot(); // add one default slot
     spUpdatePreview();
@@ -41,12 +43,21 @@ function openSeriesPanelEdit(seriesId, fromEventId) {
 
     // Clear existing slots before loading data
     document.getElementById('sp-slots').innerHTML = '';
+    document.getElementById('sp-submit-btn').textContent = 'Zapisz zmiany';
 
     // Load existing series data and pre-fill
     fetch(`/api/series/${seriesId}`)
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            return r.json();
+        })
         .then(data => {
             _spInitDropdowns(data);
+        })
+        .catch(err => {
+            const errEl = document.getElementById('sp-error');
+            document.getElementById('sp-error-text').textContent = `Nie można załadować serii: ${err.message}`;
+            errEl.classList.remove('hidden');
         });
 }
 
