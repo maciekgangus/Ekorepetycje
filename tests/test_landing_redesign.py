@@ -32,3 +32,38 @@ async def test_landing_hero_has_max_width_wrapper():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         r = await client.get("/")
     assert "max-w-7xl" in r.text
+
+
+async def test_subject_detail_matematyka_returns_200():
+    from app.main import app
+    from httpx import AsyncClient, ASGITransport
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/przedmioty/matematyka")
+    assert r.status_code == 200
+    assert "Matematyka" in r.text
+
+
+async def test_subject_detail_informatyka_returns_200():
+    from app.main import app
+    from httpx import AsyncClient, ASGITransport
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/przedmioty/informatyka")
+    assert r.status_code == 200
+    assert "Informatyka" in r.text
+
+
+async def test_subject_detail_jezyki_returns_200():
+    from app.main import app
+    from httpx import AsyncClient, ASGITransport
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/przedmioty/jezyki-obce")
+    assert r.status_code == 200
+    assert "Języki" in r.text
+
+
+async def test_subject_detail_unknown_slug_returns_404():
+    from app.main import app
+    from httpx import AsyncClient, ASGITransport
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/przedmioty/fizyka")
+    assert r.status_code == 404

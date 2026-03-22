@@ -1,10 +1,14 @@
 """HTML routes for the public-facing landing pages (Jinja2 + HTMX)."""
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.dependencies import get_db
 from app.core.templates import templates
+from app.models.users import User, UserRole
 from app.schemas.contact import ContactForm
 from app.services.email import send_contact_email
 
@@ -42,4 +46,34 @@ async def submit_contact(
     await send_contact_email(form)
     return templates.TemplateResponse(
         "components/contact_success.html", {"request": request}
+    )
+
+
+_SUBJECT_KEYWORDS: dict[str, str] = {
+    "matematyka": "Matematyka",
+    "informatyka": "Informatyka",
+    "jezyki-obce": "Języki",
+}
+
+
+@router.get("/przedmioty/{slug}", response_class=HTMLResponse)
+async def subject_detail(
+    slug: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Render a subject detail page with static description and live teacher list."""
+    if slug not in _SUBJECT_KEYWORDS:
+        raise HTTPException(status_code=404, detail="Subject not found")
+    keyword = _SUBJECT_KEYWORDS[slug]
+    result = await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .where(User.specialties.ilike(f"%{keyword}%"))
+        .order_by(User.created_at.asc())
+    )
+    teachers = result.scalars().all()
+    return templates.TemplateResponse(
+        "landing/subject_detail.html",
+        {"request": request, "subject": slug, "keyword": keyword, "teachers": teachers},
     )

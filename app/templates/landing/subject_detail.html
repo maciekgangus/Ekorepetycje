@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block html_attrs %}{% endblock %}
+{% block body_attrs %}class="bg-cream text-ink font-sans antialiased min-h-screen"{% endblock %}
+{% block navbar %}{% include "components/navbar_landing.html" %}{% endblock %}
+
+{% block title %}
+{% if subject == "matematyka" %}Matematyka i Fizyka{% elif subject == "informatyka" %}Informatyka i IT{% else %}Języki Obce{% endif %}
+ — Ekorepetycje
+{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-10 text-xs text-ink/40 tracking-wide">
+        <a href="/" class="hover:text-navy transition-colors">Strona główna</a>
+        <span class="mx-2">·</span>
+        <a href="/#przedmioty" class="hover:text-navy transition-colors">Przedmioty</a>
+        <span class="mx-2">·</span>
+        <span class="text-ink/60">{{ keyword }}</span>
+    </nav>
+
+    <!-- Static description -->
+    <div class="max-w-3xl mb-20">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Oferta</p>
+
+        {% if subject == "matematyka" %}
+        <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Matematyka i Fizyka</h1>
+        <div class="space-y-5 text-ink/70 leading-relaxed">
+            <p>Oferujemy korepetycje z matematyki i fizyki dla uczniów szkół podstawowych, licealistów oraz
+            studentów. Nasi nauczyciele specjalizują się w przygotowaniu do egzaminów — od matury
+            podstawowej po rozszerzoną — i olimpiad przedmiotowych.</p>
+            <p>Każde zajęcia zaczynamy od diagnozy — identyfikujemy luki w wiedzy i dopasowujemy tempo
+            do indywidualnych potrzeb. Typowe obszary: algebra liniowa, rachunek różniczkowy i całkowy,
+            geometria analityczna, mechanika klasyczna i elektrodynamika.</p>
+            <p>Uczniowie przygotowujący się do matury rozszerzonej osiągają u nas średnio o 18 punktów
+            procentowych więcej niż przed rozpoczęciem korepetycji. Używamy sprawdzonych metod
+            rozwiązywania zadań i arkuszy z poprzednich lat.</p>
+            <p>Zajęcia odbywają się online lub stacjonarnie w Warszawie — elastyczny grafik dopasowany
+            do planu szkolnego i semestralnego.</p>
+        </div>
+        {% elif subject == "informatyka" %}
+        <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Informatyka i IT</h1>
+        <div class="space-y-5 text-ink/70 leading-relaxed">
+            <p>Prowadzimy korepetycje z informatyki, programowania i algorytmiki — od poziomu licealnego
+            po studia inżynierskie. Przygotowujemy do matury z informatyki, rozmów kwalifikacyjnych
+            w branży IT oraz egzaminów semestralnych.</p>
+            <p>Obejmujemy języki programowania: Python, JavaScript, C++, Java. Uczymy myślenia
+            algorytmicznego — złożoność obliczeniowa, struktury danych, programowanie dynamiczne —
+            a nie tylko składni. Każdy uczeń pracuje na własnych projektach.</p>
+            <p>Dla studentów oferujemy wsparcie przy projektach zaliczeniowych, analizie kodu
+            i przygotowaniu do kolokwiów z algorytmów i programowania obiektowego.</p>
+            <p>Wszystkie zajęcia online — co daje dostęp do środowisk developerskich i współdzielenia
+            ekranu w czasie rzeczywistym.</p>
+        </div>
+        {% else %}
+        <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Języki Obce</h1>
+        <div class="space-y-5 text-ink/70 leading-relaxed">
+            <p>Oferujemy korepetycje z angielskiego, niemieckiego i hiszpańskiego na wszystkich poziomach
+            zaawansowania — od A1 do C2. Specjalizujemy się w przygotowaniu do egzaminów
+            Cambridge (FCE, CAE, CPE), IELTS, TOEFL oraz matur językowych.</p>
+            <p>Zajęcia skupiają się na praktycznym użyciu języka: konwersacje, pisanie, rozumienie
+            ze słuchu i czytanie. Nie uczymy „szkolnego" angielskiego — uczymy języka, którym
+            mówi się w pracy, na uczelni i w podróży.</p>
+            <p>Nasi lektorzy posiadają certyfikaty CELTA i DELTA, a część z nich to native speakerzy
+            lub osoby z długoletnim doświadczeniem za granicą. Każdy kurs poprzedzamy testem
+            poziomującym.</p>
+            <p>Elastyczny grafik — zajęcia online lub w Warszawie, w weekendy i wieczorami.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Dynamic teacher grid -->
+    {% if teachers %}
+    <div class="border-t border-ink/10 pt-16">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Zespół</p>
+        <h2 class="font-serif text-3xl font-bold text-ink mb-10">Nauczyciele tego przedmiotu</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for teacher in teachers %}
+            <a href="/nauczyciele/{{ teacher.id }}"
+               class="border border-ink/10 p-6 hover:border-navy/30 hover:bg-navy/5 transition-colors group block">
+                <div class="flex items-center gap-4 mb-4">
+                    {% if teacher.photo_url %}
+                    <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
+                         class="w-14 h-14 object-cover flex-shrink-0">
+                    {% else %}
+                    <div class="w-14 h-14 bg-navy flex items-center justify-center flex-shrink-0">
+                        <span class="text-cream font-serif text-lg font-bold">
+                            {{ teacher.full_name[:2].upper() }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold text-ink group-hover:text-navy transition-colors">{{ teacher.full_name }}</p>
+                        {% if teacher.specialties %}
+                        <p class="text-xs text-navy/70 mt-0.5">{{ teacher.specialties }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if teacher.bio %}
+                <p class="text-sm text-ink/60 leading-relaxed">
+                    {{ teacher.bio[:120] }}{% if teacher.bio|length > 120 %}…{% endif %}
+                </p>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CTA -->
+    <div class="mt-20 border-t border-ink/10 pt-16 text-center">
+        <p class="text-ink/60 mb-6">Gotowy, żeby zacząć? Pierwsza konsultacja jest bezpłatna.</p>
+        <a href="/#kontakt"
+           class="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream font-medium px-8 py-3.5 transition-colors text-sm tracking-wide">
+            Umów bezpłatną konsultację
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </a>
+    </div>
+</div>
+{% endblock %}
