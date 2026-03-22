@@ -215,6 +215,9 @@
             <a href="/nauczyciele/{{ teacher.id }}"
                class="border border-ink/10 p-6 hover:border-navy/30 hover:bg-navy/5 transition-colors group block">
                 <div class="flex items-center gap-4 mb-4">
+                    {# featured_teachers query requires photo_url IS NOT NULL,
+                       so the else branch is defensive — kept for consistency with
+                       other teacher card usages and in case the query is relaxed. #}
                     {% if teacher.photo_url %}
                     <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
                          class="w-16 h-16 object-cover flex-shrink-0">
@@ -232,6 +235,7 @@
                         {% endif %}
                     </div>
                 </div>
+                {# bio is guaranteed non-null by the query, guard kept for defensive safety #}
                 {% if teacher.bio %}
                 <p class="text-sm text-ink/60 leading-relaxed line-clamp-3">
                     {{ teacher.bio[:120] }}{% if teacher.bio|length > 120 %}…{% endif %}
