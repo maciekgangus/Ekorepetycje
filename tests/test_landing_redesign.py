@@ -74,3 +74,9 @@ async def test_teacher_profile_unknown_id_returns_404(client: AsyncClient):
     import uuid as _uuid
     r = await client.get(f"/nauczyciele/{_uuid.uuid4()}")
     assert r.status_code == 404
+
+
+async def test_teacher_profile_returns_200_for_known_teacher(client: AsyncClient, teacher_in_db):
+    r = await client.get(f"/nauczyciele/{teacher_in_db}")
+    assert r.status_code == 200
+    assert "Test Nauczyciel" in r.text
