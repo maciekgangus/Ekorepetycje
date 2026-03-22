@@ -11,7 +11,6 @@ def test_user_model_has_profile_fields():
     assert hasattr(User, "created_at")
 
 
-@pytest.mark.anyio
 async def test_landing_page_no_ampersand_in_subjects():
     """Subject card headings must not contain & character."""
     from app.main import app
@@ -26,7 +25,6 @@ async def test_landing_page_no_ampersand_in_subjects():
     assert 'hx-get="/subjects?level=' not in r.text
 
 
-@pytest.mark.anyio
 async def test_landing_hero_has_max_width_wrapper():
     """Hero inner content must be wrapped in a max-width container."""
     from app.main import app

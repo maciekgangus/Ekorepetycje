@@ -494,17 +494,6 @@
         });
     });
 
-    // Subject filter tab active state
-    document.querySelectorAll('.subject-filter').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.subject-filter').forEach(function(b) {
-                b.classList.remove('bg-navy', 'text-cream', 'border-navy');
-                b.classList.add('border-ink/20', 'text-ink/60');
-            });
-            this.classList.add('bg-navy', 'text-cream', 'border-navy');
-            this.classList.remove('border-ink/20', 'text-ink/60');
-        });
-    });
 </script>
 {% endblock %}
 
