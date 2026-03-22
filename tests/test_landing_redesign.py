@@ -62,3 +62,15 @@ async def test_landing_page_teacher_section_hidden_when_no_teachers(client: Asyn
     r = await client.get("/")
     assert r.status_code == 200
     assert "Nasi Nauczyciele" not in r.text
+
+
+async def test_teachers_list_page_returns_200(client: AsyncClient):
+    r = await client.get("/nauczyciele")
+    assert r.status_code == 200
+    assert "Nauczyciele" in r.text
+
+
+async def test_teacher_profile_unknown_id_returns_404(client: AsyncClient):
+    import uuid as _uuid
+    r = await client.get(f"/nauczyciele/{_uuid.uuid4()}")
+    assert r.status_code == 404

@@ -75,6 +75,40 @@ _SUBJECT_KEYWORDS: dict[str, str] = {
 }
 
 
+@router.get("/nauczyciele", response_class=HTMLResponse)
+async def teachers_list(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Render the full teachers list page."""
+    result = await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .order_by(User.created_at.asc())
+    )
+    teachers = result.scalars().all()
+    return templates.TemplateResponse(
+        "landing/teachers.html",
+        {"request": request, "teachers": teachers},
+    )
+
+
+@router.get("/nauczyciele/{teacher_id}", response_class=HTMLResponse)
+async def teacher_profile_page(
+    teacher_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Render an individual teacher profile page."""
+    teacher = await db.get(User, teacher_id)
+    if not teacher or teacher.role != UserRole.TEACHER:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    return templates.TemplateResponse(
+        "landing/teacher_profile.html",
+        {"request": request, "teacher": teacher},
+    )
+
+
 @router.get("/przedmioty/{slug}", response_class=HTMLResponse)
 async def subject_detail(
     slug: str,

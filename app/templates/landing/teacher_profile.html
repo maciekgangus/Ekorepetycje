@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block html_attrs %}{% endblock %}
+{% block body_attrs %}class="bg-cream text-ink font-sans antialiased min-h-screen"{% endblock %}
+{% block navbar %}{% include "components/navbar_landing.html" %}{% endblock %}
+{% block title %}{{ teacher.full_name }} — Ekorepetycje{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-4 sm:px-6 max-w-3xl mx-auto">
+
+    <nav class="mb-10 text-xs text-ink/40 tracking-wide">
+        <a href="/" class="hover:text-navy transition-colors">Strona główna</a>
+        <span class="mx-2">·</span>
+        <a href="/nauczyciele" class="hover:text-navy transition-colors">Nauczyciele</a>
+        <span class="mx-2">·</span>
+        <span class="text-ink/60">{{ teacher.full_name }}</span>
+    </nav>
+
+    <div class="flex items-start gap-8 mb-12">
+        {% if teacher.photo_url %}
+        <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
+             class="w-32 h-32 object-cover flex-shrink-0">
+        {% else %}
+        <div class="w-32 h-32 bg-navy flex items-center justify-center flex-shrink-0">
+            <span class="text-cream font-serif text-4xl font-bold">
+                {{ teacher.full_name[:2].upper() }}
+            </span>
+        </div>
+        {% endif %}
+        <div class="pt-2">
+            <h1 class="font-serif text-3xl md:text-4xl font-bold text-ink mb-2">{{ teacher.full_name }}</h1>
+            {% if teacher.specialties %}
+            <div class="flex flex-wrap gap-2">
+                {% for s in teacher.specialties.split(',') %}
+                <span class="text-xs text-navy border border-navy/30 px-3 py-1 tracking-wide">{{ s.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if teacher.bio %}
+    <div class="prose prose-lg max-w-none text-ink/70 leading-relaxed mb-16">
+        <p>{{ teacher.bio }}</p>
+    </div>
+    {% endif %}
+
+    <div class="border-t border-ink/10 pt-12 text-center">
+        <p class="text-ink/60 mb-6">Umów lekcję z {{ teacher.full_name }} — pierwsza konsultacja jest bezpłatna.</p>
+        <a href="/#kontakt"
+           class="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream font-medium px-8 py-3.5 transition-colors text-sm tracking-wide">
+            Umów bezpłatną konsultację
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </a>
+    </div>
+</div>
+{% endblock %}

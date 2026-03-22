@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block html_attrs %}{% endblock %}
+{% block body_attrs %}class="bg-cream text-ink font-sans antialiased min-h-screen"{% endblock %}
+{% block navbar %}{% include "components/navbar_landing.html" %}{% endblock %}
+{% block title %}Nasi Nauczyciele — Ekorepetycje{% endblock %}
+
+{% block content %}
+<div class="pt-24 pb-16 px-4 sm:px-6 max-w-7xl mx-auto">
+
+    <nav class="mb-10 text-xs text-ink/40 tracking-wide">
+        <a href="/" class="hover:text-navy transition-colors">Strona główna</a>
+        <span class="mx-2">·</span>
+        <span class="text-ink/60">Nauczyciele</span>
+    </nav>
+
+    <div class="mb-16">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Zespół</p>
+        <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink">Nasi Nauczyciele</h1>
+    </div>
+
+    {% if teachers %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for teacher in teachers %}
+        <a href="/nauczyciele/{{ teacher.id }}"
+           class="border border-ink/10 p-6 hover:border-navy/30 hover:bg-navy/5 transition-colors group block">
+            <div class="flex items-center gap-4 mb-4">
+                {% if teacher.photo_url %}
+                <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
+                     class="w-16 h-16 object-cover flex-shrink-0">
+                {% else %}
+                <div class="w-16 h-16 bg-navy flex items-center justify-center flex-shrink-0">
+                    <span class="text-cream font-serif text-2xl font-bold">
+                        {{ teacher.full_name[:2].upper() }}
+                    </span>
+                </div>
+                {% endif %}
+                <div>
+                    <p class="font-semibold text-ink group-hover:text-navy transition-colors">{{ teacher.full_name }}</p>
+                    {% if teacher.specialties %}
+                    <p class="text-xs text-navy tracking-wide mt-0.5">{{ teacher.specialties }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% if teacher.bio %}
+            <p class="text-sm text-ink/60 leading-relaxed">
+                {{ teacher.bio[:120] }}{% if teacher.bio|length > 120 %}…{% endif %}
+            </p>
+            {% else %}
+            <p class="text-sm text-ink/30 italic">Brak opisu.</p>
+            {% endif %}
+            <p class="mt-4 text-xs text-navy font-medium group-hover:underline">Zobacz profil →</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="border border-ink/10 p-16 text-center">
+        <p class="text-ink/40">Wkrótce poznasz nasz zespół.</p>
+    </div>
+    {% endif %}
+
+    <div class="mt-20 border-t border-ink/10 pt-16 text-center">
+        <p class="text-ink/60 mb-6">Chcesz dołączyć do zespołu lub umówić się na lekcję?</p>
+        <a href="/#kontakt"
+           class="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-cream font-medium px-8 py-3.5 transition-colors text-sm tracking-wide">
+            Skontaktuj się z nami
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+            </svg>
+        </a>
+    </div>
+</div>
+{% endblock %}
