@@ -195,6 +195,65 @@
 <!-- Divider -->
 <div class="border-t border-ink/10"></div>
 
+{% if featured_teachers %}
+<!-- ─── TEACHERS ──────────────────────────────────────────────────────────── -->
+<section id="nauczyciele" class="py-24 px-4 sm:px-6 scroll-mt-16">
+    <div class="max-w-7xl mx-auto">
+        <div class="mb-14 flex items-end justify-between">
+            <div>
+                <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Zespół</p>
+                <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Nasi Nauczyciele</h2>
+            </div>
+            <a href="/nauczyciele"
+               class="text-sm text-navy font-medium hover:underline hidden sm:block">
+                Poznaj cały zespół →
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {% for teacher in featured_teachers %}
+            <a href="/nauczyciele/{{ teacher.id }}"
+               class="border border-ink/10 p-6 hover:border-navy/30 hover:bg-navy/5 transition-colors group block">
+                <div class="flex items-center gap-4 mb-4">
+                    {% if teacher.photo_url %}
+                    <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
+                         class="w-16 h-16 object-cover flex-shrink-0">
+                    {% else %}
+                    <div class="w-16 h-16 bg-navy flex items-center justify-center flex-shrink-0">
+                        <span class="text-cream font-serif text-xl font-bold">
+                            {{ teacher.full_name[:2].upper() }}
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <p class="font-semibold text-ink group-hover:text-navy transition-colors">{{ teacher.full_name }}</p>
+                        {% if teacher.specialties %}
+                        <p class="text-xs text-navy/70 mt-0.5">{{ teacher.specialties }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if teacher.bio %}
+                <p class="text-sm text-ink/60 leading-relaxed line-clamp-3">
+                    {{ teacher.bio[:120] }}{% if teacher.bio|length > 120 %}…{% endif %}
+                </p>
+                {% endif %}
+                <p class="mt-4 text-xs text-navy font-medium group-hover:underline">Zobacz profil →</p>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="text-center sm:hidden">
+            <a href="/nauczyciele" class="text-sm text-navy font-medium hover:underline">
+                Poznaj cały zespół →
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Divider -->
+<div class="border-t border-ink/10"></div>
+{% endif %}
+
 <!-- ─── HOW IT WORKS ───────────────────────────────────────────────────────── -->
 <section id="metoda" class="py-24 px-6 scroll-mt-16">
     <div class="max-w-6xl mx-auto">

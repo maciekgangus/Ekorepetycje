@@ -18,9 +18,24 @@ router = APIRouter()
 
 
 @router.get("/", response_class=HTMLResponse)
-async def landing_page(request: Request) -> HTMLResponse:
-    """Render the main landing page."""
-    return templates.TemplateResponse("landing/index.html", {"request": request})
+async def landing_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Render the main landing page with featured teachers."""
+    result = await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .where(User.photo_url.isnot(None))
+        .where(User.bio.isnot(None))
+        .order_by(User.created_at.asc())
+        .limit(3)
+    )
+    featured_teachers = result.scalars().all()
+    return templates.TemplateResponse(
+        "landing/index.html",
+        {"request": request, "featured_teachers": featured_teachers},
+    )
 
 
 @router.get("/contact", response_class=HTMLResponse)

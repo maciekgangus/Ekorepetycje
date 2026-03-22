@@ -50,3 +50,11 @@ async def test_subject_detail_jezyki_returns_200(client: AsyncClient):
 async def test_subject_detail_unknown_slug_returns_404(client: AsyncClient):
     r = await client.get("/przedmioty/fizyka")
     assert r.status_code == 404
+
+
+async def test_landing_page_teacher_section_hidden_when_no_teachers(client: AsyncClient):
+    """Teacher section must be absent when no teachers have photo+bio."""
+    r = await client.get("/")
+    assert r.status_code == 200
+    # With empty DB, no "Nasi Nauczyciele" section
+    assert "Nasi Nauczyciele" not in r.text
