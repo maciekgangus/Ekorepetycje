@@ -24,7 +24,9 @@ def upgrade() -> None:
     op.add_column('users', sa.Column('photo_url', sa.String(length=512), nullable=True))
     op.add_column('users', sa.Column('bio', sa.Text(), nullable=True))
     op.add_column('users', sa.Column('specialties', sa.String(length=256), nullable=True))
-    op.add_column('users', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False))
+    op.add_column('users', sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True))
+    op.execute("UPDATE users SET created_at = now() WHERE created_at IS NULL")
+    op.alter_column('users', 'created_at', nullable=False)
     # ### end Alembic commands ###
 
 
