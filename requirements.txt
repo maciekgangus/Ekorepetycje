@@ -13,6 +13,7 @@ email-validator
 passlib[bcrypt]
 bcrypt<4.0.0
 itsdangerous
+Pillow
 pytest
 pytest-asyncio
 anyio[trio]
