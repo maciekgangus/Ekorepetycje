@@ -3,6 +3,7 @@
 
 import pytest
 from typing import AsyncGenerator
+from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import NullPool
 
@@ -22,6 +23,12 @@ async def override_get_db():
     NullPool prevents asyncpg connections from being reused across event-loop
     boundaries (which causes 'another operation is in progress' errors when
     multiple async tests share the same SQLAlchemy engine).
+
+    Note: the session commits on success (mirroring the production session
+    middleware). This provides connection-level isolation but NOT data-level
+    isolation — writes from one test persist to the shared test DB. Write
+    tests should either clean up after themselves or seed data via a fixture
+    that rolls back.
     """
     engine = _make_null_pool_engine()
     session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -39,3 +46,10 @@ async def override_get_db():
     yield
     app.dependency_overrides.pop(get_db, None)
     await engine.dispose()
+
+
+@pytest.fixture
+async def client() -> AsyncGenerator[AsyncClient, None]:
+    """Shared ASGI test client — avoids repeating transport boilerplate in every test."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        yield ac

@@ -51,6 +51,8 @@ async def submit_contact(
     )
 
 
+# Values are used as ILIKE patterns (%keyword%). Do NOT include SQL LIKE
+# metacharacters (%, _) in these strings or filtering will break silently.
 _SUBJECT_KEYWORDS: dict[str, str] = {
     "matematyka": "Matematyka",
     "informatyka": "Informatyka",
