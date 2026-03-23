@@ -40,8 +40,8 @@ async def teacher_dashboard(
     )
     upcoming = result.scalars().all()
     return templates.TemplateResponse(
-        "teacher/dashboard.html",
-        {"request": request, "user": current_user, "upcoming": upcoming},
+        request, "teacher/dashboard.html",
+        {"user": current_user, "upcoming": upcoming},
     )
 
 
@@ -51,8 +51,8 @@ async def teacher_calendar(
     current_user: User = Depends(require_teacher_or_admin),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
-        "teacher/calendar.html",
-        {"request": request, "user": current_user},
+        request, "teacher/calendar.html",
+        {"user": current_user},
     )
 
 
@@ -70,8 +70,8 @@ async def teacher_proposals(
     )
     proposals = result.scalars().all()
     return templates.TemplateResponse(
-        "teacher/proposals.html",
-        {"request": request, "user": current_user, "proposals": proposals},
+        request, "teacher/proposals.html",
+        {"user": current_user, "proposals": proposals},
     )
 
 
@@ -104,6 +104,6 @@ async def create_proposal(
     await db.flush()
     await send_proposal_email(current_user, proposal)
     return templates.TemplateResponse(
-        "components/inline_success.html",
-        {"request": request, "message": "Propozycja przesłana do akceptacji."},
+        request, "components/inline_success.html",
+        {"message": "Propozycja przesłana do akceptacji."},
     )

@@ -3,13 +3,14 @@
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import routes_landing, routes_api, routes_admin
 from app.api import routes_auth, routes_profile, routes_teacher, routes_student
 from app.core.auth import _LoginRedirect
 from app.core.config import settings
+from app.core.templates import templates
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -36,6 +37,11 @@ app.include_router(routes_admin.router)
 @app.exception_handler(_LoginRedirect)
 async def login_redirect_handler(request: Request, exc: _LoginRedirect) -> RedirectResponse:
     return RedirectResponse("/login", status_code=303)
+
+
+@app.exception_handler(403)
+async def forbidden_handler(request: Request, exc: Exception) -> HTMLResponse:
+    return templates.TemplateResponse(request, "errors/403.html", status_code=403)
 
 
 # ---------------------------------------------------------------------------

@@ -33,15 +33,15 @@ async def landing_page(
     )
     featured_teachers = result.scalars().all()
     return templates.TemplateResponse(
-        "landing/index.html",
-        {"request": request, "featured_teachers": featured_teachers},
+        request, "landing/index.html",
+        {"featured_teachers": featured_teachers},
     )
 
 
 @router.get("/contact", response_class=HTMLResponse)
 async def contact_page(request: Request) -> HTMLResponse:
     """Render the contact page."""
-    return templates.TemplateResponse("landing/contact.html", {"request": request})
+    return templates.TemplateResponse(request, "landing/contact.html")
 
 
 @router.post("/contact/submit", response_class=HTMLResponse)
@@ -56,14 +56,12 @@ async def submit_contact(
         form = ContactForm(name=name, email=email, message=message)
     except ValidationError:
         return templates.TemplateResponse(
-            "components/contact_error.html",
-            {"request": request, "error": "Nieprawidłowy adres e-mail. Sprawdź wpisany adres."},
+            request, "components/contact_error.html",
+            {"error": "Nieprawidłowy adres e-mail. Sprawdź wpisany adres."},
             status_code=422,
         )
     await send_contact_email(form)
-    return templates.TemplateResponse(
-        "components/contact_success.html", {"request": request}
-    )
+    return templates.TemplateResponse(request, "components/contact_success.html")
 
 
 # Values are used as ILIKE patterns (%keyword%). Do NOT include SQL LIKE
@@ -88,8 +86,8 @@ async def teachers_list(
     )
     teachers = result.scalars().all()
     return templates.TemplateResponse(
-        "landing/teachers.html",
-        {"request": request, "teachers": teachers},
+        request, "landing/teachers.html",
+        {"teachers": teachers},
     )
 
 
@@ -104,8 +102,8 @@ async def teacher_profile_page(
     if not teacher or teacher.role != UserRole.TEACHER:
         raise HTTPException(status_code=404, detail="Teacher not found")
     return templates.TemplateResponse(
-        "landing/teacher_profile.html",
-        {"request": request, "teacher": teacher},
+        request, "landing/teacher_profile.html",
+        {"teacher": teacher},
     )
 
 
@@ -127,6 +125,6 @@ async def subject_detail(
     )
     teachers = result.scalars().all()
     return templates.TemplateResponse(
-        "landing/subject_detail.html",
-        {"request": request, "subject": slug, "keyword": keyword, "teachers": teachers},
+        request, "landing/subject_detail.html",
+        {"subject": slug, "keyword": keyword, "teachers": teachers},
     )

@@ -38,8 +38,8 @@ async def admin_dashboard(
     offerings = result.scalars().all()
     pending = await _pending_count(db)
     return templates.TemplateResponse(
-        "admin/dashboard.html",
-        {"request": request, "offerings": offerings, "pending_proposals": pending},
+        request, "admin/dashboard.html",
+        {"offerings": offerings, "pending_proposals": pending},
     )
 
 
@@ -49,8 +49,8 @@ async def admin_calendar(
     current_user: User = Depends(require_admin),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
-        "admin/calendar.html",
-        {"request": request, "user": current_user},
+        request, "admin/calendar.html",
+        {"user": current_user},
     )
 
 
@@ -64,8 +64,8 @@ async def admin_users(
     users = result.scalars().all()
     pending = await _pending_count(db)
     return templates.TemplateResponse(
-        "admin/users.html",
-        {"request": request, "users": users, "roles": list(UserRole), "pending_proposals": pending},
+        request, "admin/users.html",
+        {"users": users, "roles": list(UserRole), "pending_proposals": pending},
     )
 
 
@@ -83,8 +83,8 @@ async def create_user(
     if existing:
         result = await db.execute(select(User).order_by(User.role, User.full_name))
         return templates.TemplateResponse(
-            "admin/users.html",
-            {"request": request, "users": result.scalars().all(),
+            request, "admin/users.html",
+            {"users": result.scalars().all(),
              "roles": list(UserRole), "pending_proposals": await _pending_count(db),
              "error": f"Użytkownik z adresem {email} już istnieje."},
         )
@@ -98,8 +98,8 @@ async def create_user(
     result = await db.execute(select(User).order_by(User.role, User.full_name))
     users = result.scalars().all()
     return templates.TemplateResponse(
-        "admin/users.html",
-        {"request": request, "users": users, "roles": list(UserRole), "pending_proposals": await _pending_count(db)},
+        request, "admin/users.html",
+        {"users": users, "roles": list(UserRole), "pending_proposals": await _pending_count(db)},
     )
 
 
@@ -117,8 +117,8 @@ async def update_user_role(
         user.role = UserRole(role)
         await db.flush()
     return templates.TemplateResponse(
-        "components/inline_success.html",
-        {"request": request, "message": "Rola zaktualizowana."},
+        request, "components/inline_success.html",
+        {"message": "Rola zaktualizowana."},
     )
 
 
@@ -136,8 +136,8 @@ async def reset_user_password(
         user.hashed_password = hash_password(password)
         await db.flush()
     return templates.TemplateResponse(
-        "components/inline_success.html",
-        {"request": request, "message": "Hasło zmienione."},
+        request, "components/inline_success.html",
+        {"message": "Hasło zmienione."},
     )
 
 
@@ -156,8 +156,8 @@ async def admin_proposals(
     proposals = result.scalars().all()
     pending = len(proposals)
     return templates.TemplateResponse(
-        "admin/proposals.html",
-        {"request": request, "proposals": proposals, "pending_proposals": pending},
+        request, "admin/proposals.html",
+        {"proposals": proposals, "pending_proposals": pending},
     )
 
 
@@ -186,8 +186,8 @@ async def approve_proposal(
         await db.flush()
         await send_proposal_outcome_email(proposal, approved=True)
     return templates.TemplateResponse(
-        "components/inline_success.html",
-        {"request": request, "message": "Zaakceptowano."},
+        request, "components/inline_success.html",
+        {"message": "Zaakceptowano."},
     )
 
 
@@ -208,8 +208,8 @@ async def reject_proposal(
         await db.flush()
         await send_proposal_outcome_email(proposal, approved=False)
     return templates.TemplateResponse(
-        "components/inline_success.html",
-        {"request": request, "message": "Odrzucono."},
+        request, "components/inline_success.html",
+        {"message": "Odrzucono."},
     )
 
 
@@ -228,8 +228,8 @@ async def create_offering_htmx(
         t_id = UUID(teacher_id)
     except (InvalidOperation, ValueError):
         return templates.TemplateResponse(
-            "components/error_fragment.html",
-            {"request": request, "error": "Nieprawidłowe dane. Sprawdź UUID nauczyciela i cenę."},
+            request, "components/error_fragment.html",
+            {"error": "Nieprawidłowe dane. Sprawdź UUID nauczyciela i cenę."},
             status_code=422,
         )
     offering = Offering(
@@ -240,6 +240,6 @@ async def create_offering_htmx(
     await db.flush()
     result = await db.execute(select(Offering))
     return templates.TemplateResponse(
-        "components/offerings_list.html",
-        {"request": request, "offerings": result.scalars().all()},
+        request, "components/offerings_list.html",
+        {"offerings": result.scalars().all()},
     )

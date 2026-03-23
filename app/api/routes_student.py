@@ -23,8 +23,8 @@ async def student_calendar(
     current_user: User = Depends(require_role(UserRole.STUDENT)),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
-        "student/calendar.html",
-        {"request": request, "user": current_user},
+        request, "student/calendar.html",
+        {"user": current_user},
     )
 
 
@@ -45,6 +45,6 @@ async def student_dashboard(
     upcoming = [e for e in events if e.start_time >= now and e.status == EventStatus.SCHEDULED]
     past = [e for e in events if e.start_time < now]
     return templates.TemplateResponse(
-        "student/dashboard.html",
-        {"request": request, "user": current_user, "upcoming": upcoming, "past": past},
+        request, "student/dashboard.html",
+        {"user": current_user, "upcoming": upcoming, "past": past},
     )

@@ -19,7 +19,8 @@ async def profile_page(
     current_user: User = Depends(require_auth),
 ) -> HTMLResponse:
     return templates.TemplateResponse(
-        "profile.html", {"request": request, "user": current_user}
+        request, "profile.html",
+        {"user": current_user},
     )
 
 
@@ -33,12 +34,12 @@ async def change_password(
 ) -> HTMLResponse:
     if not verify_password(old_password, current_user.hashed_password):
         return templates.TemplateResponse(
-            "profile.html",
-            {"request": request, "user": current_user, "error": "Nieprawidłowe obecne hasło."},
+            request, "profile.html",
+            {"user": current_user, "error": "Nieprawidłowe obecne hasło."},
         )
     current_user.hashed_password = hash_password(new_password)
     await db.flush()
     return templates.TemplateResponse(
-        "profile.html",
-        {"request": request, "user": current_user, "success": "Hasło zmienione pomyślnie."},
+        request, "profile.html",
+        {"user": current_user, "success": "Hasło zmienione pomyślnie."},
     )

@@ -28,7 +28,7 @@ async def login_page(
     """Show login form. Redirect already-authenticated users to their dashboard."""
     if user:
         return RedirectResponse(_ROLE_REDIRECT.get(user.role, "/"), status_code=303)
-    return templates.TemplateResponse("auth/login.html", {"request": request})
+    return templates.TemplateResponse(request, "auth/login.html")
 
 
 @router.post("/login", response_class=HTMLResponse)
@@ -44,8 +44,8 @@ async def login_submit(
 
     if not user or not verify_password(password, user.hashed_password):
         return templates.TemplateResponse(
-            "auth/login.html",
-            {"request": request, "error": "Nieprawidłowy e-mail lub hasło."},
+            request, "auth/login.html",
+            {"error": "Nieprawidłowy e-mail lub hasło."},
             status_code=200,
         )
 

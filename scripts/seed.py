@@ -100,7 +100,7 @@ async def seed():
 
         # --- Unavailable blocks ---
         db.add(UnavailableBlock(
-            id=uuid.uuid4(), teacher_id=teacher1.id,
+            id=uuid.uuid4(), user_id=teacher1.id,
             start_time=NOW + timedelta(days=4, hours=8),
             end_time=NOW + timedelta(days=4, hours=12),
             note="Wizyta lekarska",
