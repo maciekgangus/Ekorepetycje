@@ -70,6 +70,12 @@ async def test_teachers_list_page_returns_200(client: AsyncClient):
     assert "Nauczyciele" in r.text
 
 
+async def test_teachers_list_shows_seeded_teacher(client: AsyncClient, teacher_in_db):
+    r = await client.get("/nauczyciele")
+    assert r.status_code == 200
+    assert "Test Nauczyciel" in r.text
+
+
 async def test_teacher_profile_unknown_id_returns_404(client: AsyncClient):
     import uuid as _uuid
     r = await client.get(f"/nauczyciele/{_uuid.uuid4()}")
