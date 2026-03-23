@@ -1,0 +1,84 @@
+name: CI
+
+# Runs on every push and on pull requests targeting main.
+# Does NOT deploy — that is handled by deploy.yml (main branch only).
+
+on:
+  push:
+    branches-ignore:
+      - main        # main is handled by deploy.yml
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # ── 1. Test suite ────────────────────────────────────────────────────────────
+  test:
+    name: Pytest
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ekorepetycje_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ekorepetycje_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ekorepetycje_test
+      SECRET_KEY: ci-test-secret-key-not-used-in-prod
+      DEBUG: "True"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply Alembic migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ── 2. Tailwind build check ───────────────────────────────────────────────────
+  tailwind:
+    name: Tailwind CSS build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build CSS
+        run: npx tailwindcss -i ./app/static/css/input.css -o ./app/static/css/style.css
+
+      - name: Fail if compiled CSS differs from committed CSS
+        run: |
+          if ! git diff --quiet app/static/css/style.css; then
+            echo "❌ style.css is out of date. Run 'npx tailwindcss ...' locally and commit the result."
+            git diff app/static/css/style.css
+            exit 1
+          fi

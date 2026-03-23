@@ -1,0 +1,231 @@
+name: Deploy to AWS
+
+# Triggered only on direct pushes to main (i.e., after a PR is merged).
+# Pipeline: test → build & push → migrate → deploy
+
+on:
+  push:
+    branches:
+      - main
+
+# Cancel any in-progress deploy on the same branch if a new commit arrives.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: eu-central-1
+  ECR_REPOSITORY: ekorepetycje
+  ECS_CLUSTER: ekorepetycje-cluster
+  ECS_SERVICE: ekorepetycje-web
+  ECS_TASK_FAMILY: ekorepetycje
+  CONTAINER_NAME: web
+
+jobs:
+  # ── 1. Tests ──────────────────────────────────────────────────────────────────
+  # Run the full test suite before building anything. If tests fail, nothing ships.
+  test:
+    name: Pytest
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ekorepetycje_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ekorepetycje_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ekorepetycje_test
+      SECRET_KEY: ci-test-secret-key-not-used-in-prod
+      DEBUG: "True"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply Alembic migrations
+        run: alembic upgrade head
+
+      - name: Run tests
+        run: pytest tests/ -v --tb=short
+
+  # ── 2. Build & Push ──────────────────────────────────────────────────────────
+  # Build Tailwind, build the Docker image, push to ECR.
+  build:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    needs: test
+
+    outputs:
+      image: ${{ steps.build-push.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build compiled CSS so it is baked into the Docker image
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Build Tailwind CSS
+        run: |
+          npm ci
+          npx tailwindcss -i ./app/static/css/input.css -o ./app/static/css/style.css
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        id: build-push
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build for linux/amd64 (Fargate x86). Use --platform even on x86 runners
+          # so cross-compiled builds on Apple Silicon dev machines also work.
+          docker build \
+            --platform linux/amd64 \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+            --tag "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
+            .
+
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
+
+          # Pass the immutable sha-tagged URI to downstream jobs
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+  # ── 3. Migrate ───────────────────────────────────────────────────────────────
+  # Run "alembic upgrade head" as a one-off ECS Fargate task against the production
+  # database. The deploy job does NOT start until migrations succeed.
+  migrate:
+    name: Alembic migrate
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run Alembic upgrade as ECS task
+        id: run-task
+        run: |
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$ECS_CLUSTER" \
+            --task-definition "$ECS_TASK_FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={
+              subnets=[${{ secrets.ECS_PRIVATE_SUBNET_IDS }}],
+              securityGroups=[${{ secrets.ECS_SECURITY_GROUP_ID }}],
+              assignPublicIp=DISABLED
+            }" \
+            --overrides '{
+              "containerOverrides": [{
+                "name": "'"$CONTAINER_NAME"'",
+                "command": ["alembic", "upgrade", "head"]
+              }]
+            }' \
+            --query "tasks[0].taskArn" \
+            --output text)
+
+          echo "task_arn=$TASK_ARN" >> "$GITHUB_OUTPUT"
+          echo "Started migration task: $TASK_ARN"
+
+      - name: Wait for migration task to finish
+        run: |
+          echo "Waiting for task ${{ steps.run-task.outputs.task_arn }} to stop..."
+          aws ecs wait tasks-stopped \
+            --cluster "$ECS_CLUSTER" \
+            --tasks "${{ steps.run-task.outputs.task_arn }}"
+
+      - name: Assert migration exit code is 0
+        run: |
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster "$ECS_CLUSTER" \
+            --tasks "${{ steps.run-task.outputs.task_arn }}" \
+            --query "tasks[0].containers[0].exitCode" \
+            --output text)
+
+          echo "Migration container exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "❌ Migration failed (exit code $EXIT_CODE). Deployment aborted."
+            exit 1
+          fi
+
+          echo "✅ Migrations applied successfully."
+
+  # ── 4. Deploy ────────────────────────────────────────────────────────────────
+  # Update the ECS task definition to the new image and redeploy the service.
+  deploy:
+    name: Deploy to ECS
+    runs-on: ubuntu-latest
+    needs: [build, migrate]
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_TASK_FAMILY" \
+            --query taskDefinition \
+            > task-definition.json
+
+      - name: Render new task definition with updated image
+        id: render-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ needs.build.outputs.image }}
+
+      - name: Register new task definition revision
+        id: register-task-def
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Confirm deployment
+        run: |
+          echo "✅ Deployed ${{ needs.build.outputs.image }}"
+          echo "Task definition revision: ${{ steps.register-task-def.outputs.task-definition-arn }}"
