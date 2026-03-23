@@ -21,11 +21,10 @@
         <span class="text-ink/60">{{ keyword }}</span>
     </nav>
 
-    <!-- Static description -->
-    <div class="max-w-3xl mb-20">
+    {% if subject == "matematyka" %}
+    <!-- ──────────────── MATEMATYKA ──────────────── -->
+    <div class="max-w-3xl mb-12">
         <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Oferta</p>
-
-        {% if subject == "matematyka" %}
         <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Matematyka i Fizyka</h1>
         <div class="space-y-5 text-ink/70 leading-relaxed">
             <p>Oferujemy korepetycje z matematyki i fizyki dla uczniów szkół podstawowych, licealistów oraz
@@ -35,26 +34,140 @@
             do indywidualnych potrzeb. Typowe obszary: algebra liniowa, rachunek różniczkowy i całkowy,
             geometria analityczna, mechanika klasyczna i elektrodynamika.</p>
             <p>Uczniowie przygotowujący się do matury rozszerzonej osiągają u nas średnio o 18 punktów
-            procentowych więcej niż przed rozpoczęciem korepetycji. Używamy sprawdzonych metod
-            rozwiązywania zadań i arkuszy z poprzednich lat.</p>
-            <p>Zajęcia odbywają się online lub stacjonarnie w Warszawie — elastyczny grafik dopasowany
-            do planu szkolnego i semestralnego.</p>
+            procentowych więcej niż przed rozpoczęciem korepetycji.</p>
         </div>
-        {% elif subject == "informatyka" %}
+    </div>
+
+    <!-- Equation showcase -->
+    <div class="mb-16">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-px bg-ink/10 border border-ink/10">
+            <div class="bg-cream px-6 py-8 text-center">
+                <p class="font-serif text-2xl font-bold text-navy mb-2">a² + b² = c²</p>
+                <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mt-3">Twierdzenie Pitagorasa</p>
+            </div>
+            <div class="bg-cream px-6 py-8 text-center col-span-1 sm:col-span-1">
+                <p class="font-serif text-xl font-bold text-navy mb-2 leading-snug">x = <span class="inline-block">−b ± √(b²−4ac)</span><span class="block text-sm font-normal border-t border-navy/30 mt-1 pt-1">2a</span></p>
+                <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mt-2">Wzór ogólny</p>
+            </div>
+            <div class="bg-cream px-6 py-8 text-center">
+                <p class="font-serif text-2xl font-bold text-navy mb-2">∫ f(x) dx = F(x) + C</p>
+                <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mt-3">Całka nieoznaczona</p>
+            </div>
+            <div class="bg-navy px-6 py-8 text-center">
+                <p class="font-serif text-3xl font-bold text-cream mb-2">e<sup class="text-lg">iπ</sup> + 1 = 0</p>
+                <p class="text-xs text-cream/50 tracking-[0.15em] uppercase mt-3">Wzór Eulera</p>
+            </div>
+            <div class="bg-cream px-6 py-8 text-center">
+                <p class="font-serif text-2xl font-bold text-navy mb-2">E = mc²</p>
+                <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mt-3">Równoważność masy i energii</p>
+            </div>
+            <div class="bg-cream px-6 py-8 text-center">
+                <p class="font-serif text-xl font-bold text-navy mb-2 leading-snug">d<span class="italic">f</span><span class="block text-sm font-normal border-t border-navy/30 mt-1 pt-1">dx</span></p>
+                <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mt-2">Pochodna funkcji</p>
+            </div>
+        </div>
+
+        <!-- Topics -->
+        <div class="flex flex-wrap gap-2 mt-6">
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Matura podstawowa</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Matura rozszerzona</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Olimpiady</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Algebra liniowa</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Geometria analityczna</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Rachunek różniczkowy</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Mechanika klasyczna</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Elektrodynamika</span>
+            <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Statystyka</span>
+        </div>
+    </div>
+
+    {% elif subject == "informatyka" %}
+    <!-- ──────────────── INFORMATYKA ──────────────── -->
+    <div class="max-w-3xl mb-12">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Oferta</p>
         <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Informatyka i IT</h1>
         <div class="space-y-5 text-ink/70 leading-relaxed">
             <p>Prowadzimy korepetycje z informatyki, programowania i algorytmiki — od poziomu licealnego
             po studia inżynierskie. Przygotowujemy do matury z informatyki, rozmów kwalifikacyjnych
             w branży IT oraz egzaminów semestralnych.</p>
-            <p>Obejmujemy języki programowania: Python, JavaScript, C++, Java. Uczymy myślenia
-            algorytmicznego — złożoność obliczeniowa, struktury danych, programowanie dynamiczne —
-            a nie tylko składni. Każdy uczeń pracuje na własnych projektach.</p>
+            <p>Uczymy myślenia algorytmicznego — złożoność obliczeniowa, struktury danych, programowanie
+            dynamiczne — a nie tylko składni. Każdy uczeń pracuje na własnych projektach i wychodzi
+            z zajęć z kodem, który rozumie.</p>
             <p>Dla studentów oferujemy wsparcie przy projektach zaliczeniowych, analizie kodu
-            i przygotowaniu do kolokwiów z algorytmów i programowania obiektowego.</p>
-            <p>Wszystkie zajęcia online — co daje dostęp do środowisk developerskich i współdzielenia
-            ekranu w czasie rzeczywistym.</p>
+            i przygotowaniu do kolokwiów. Wszystkie zajęcia online ze współdzieleniem ekranu.</p>
         </div>
-        {% else %}
+    </div>
+
+    <!-- Code block -->
+    <div class="mb-8">
+        <div class="bg-ink text-cream font-mono text-sm overflow-x-auto">
+            <!-- Terminal bar -->
+            <div class="flex items-center gap-1.5 px-4 py-3 border-b border-cream/10">
+                <span class="w-3 h-3 rounded-full bg-red-500/70"></span>
+                <span class="w-3 h-3 rounded-full bg-yellow-500/70"></span>
+                <span class="w-3 h-3 rounded-full bg-green-500/70"></span>
+                <span class="ml-3 text-xs text-cream/30 tracking-wide">binary_search.py</span>
+            </div>
+            <pre class="px-6 py-5 leading-relaxed overflow-x-auto"><span class="text-cream/40"># Klasyczny algorytm wyszukiwania — złożoność O(log n)</span>
+
+<span class="text-blue-400">def</span> <span class="text-yellow-300">szukaj_binarne</span>(lista: <span class="text-green-400">list</span>, cel: <span class="text-green-400">int</span>) -> <span class="text-green-400">int</span>:
+    lewy, prawy = <span class="text-orange-400">0</span>, <span class="text-blue-400">len</span>(lista) - <span class="text-orange-400">1</span>
+
+    <span class="text-blue-400">while</span> lewy <= prawy:
+        srodek = (lewy + prawy) // <span class="text-orange-400">2</span>
+
+        <span class="text-blue-400">if</span> lista[srodek] == cel:
+            <span class="text-blue-400">return</span> srodek
+        <span class="text-blue-400">elif</span> lista[srodek] &lt; cel:
+            lewy = srodek + <span class="text-orange-400">1</span>
+        <span class="text-blue-400">else</span>:
+            prawy = srodek - <span class="text-orange-400">1</span>
+
+    <span class="text-blue-400">return</span> <span class="text-orange-400">-1</span>  <span class="text-cream/40"># nie znaleziono</span></pre>
+        </div>
+    </div>
+
+    <!-- Tech stack -->
+    <div class="mb-6">
+        <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mb-4">Technologie które omawiamy</p>
+        <div class="flex flex-wrap gap-3">
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-blue-500 font-bold text-base">Py</span> Python
+            </span>
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-yellow-500 font-bold text-base">JS</span> JavaScript
+            </span>
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-blue-700 font-bold text-base">C++</span>
+            </span>
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-red-600 font-bold text-base">Ja</span> Java
+            </span>
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-green-600 font-bold text-base">SQL</span>
+            </span>
+            <span class="inline-flex items-center gap-2 border border-ink/15 px-4 py-2 text-sm font-mono text-ink/80 hover:border-navy/40 transition-colors">
+                <span class="text-orange-500 font-bold text-base">Git</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Topics -->
+    <div class="flex flex-wrap gap-2 mb-16">
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Algorytmika</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Struktury danych</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Złożoność obliczeniowa</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Programowanie obiektowe</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Matura z informatyki</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Bazy danych</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Rekurencja</span>
+        <span class="text-xs border border-navy/30 text-navy px-3 py-1 tracking-wide">Projekty zaliczeniowe</span>
+    </div>
+
+    {% else %}
+    <!-- ──────────────── JĘZYKI OBCE ──────────────── -->
+    <div class="max-w-3xl mb-12">
+        <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-4">Oferta</p>
         <h1 class="font-serif text-4xl md:text-5xl font-bold text-ink mb-8">Języki Obce</h1>
         <div class="space-y-5 text-ink/70 leading-relaxed">
             <p>Oferujemy korepetycje z angielskiego, niemieckiego i hiszpańskiego na wszystkich poziomach
@@ -63,13 +176,91 @@
             <p>Zajęcia skupiają się na praktycznym użyciu języka: konwersacje, pisanie, rozumienie
             ze słuchu i czytanie. Nie uczymy „szkolnego" angielskiego — uczymy języka, którym
             mówi się w pracy, na uczelni i w podróży.</p>
-            <p>Nasi lektorzy posiadają certyfikaty CELTA i DELTA, a część z nich to native speakerzy
-            lub osoby z długoletnim doświadczeniem za granicą. Każdy kurs poprzedzamy testem
-            poziomującym.</p>
-            <p>Elastyczny grafik — zajęcia online lub w Warszawie, w weekendy i wieczorami.</p>
+            <p>Nasi lektorzy posiadają certyfikaty CELTA i DELTA, a część z nich to native speakerzy.
+            Każdy kurs poprzedzamy testem poziomującym i robimy plan na miarę Twoich celów.</p>
         </div>
-        {% endif %}
     </div>
+
+    <!-- Language cards -->
+    <div class="mb-16">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-px bg-ink/10 border border-ink/10 mb-6">
+            <!-- English -->
+            <div class="bg-cream p-8">
+                <div class="text-5xl mb-4">🇬🇧</div>
+                <p class="font-serif text-xl font-bold text-ink mb-1">Angielski</p>
+                <p class="text-xs text-ink/40 tracking-wide mb-4">A1 → C2</p>
+                <div class="space-y-1">
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Cambridge FCE / CAE / CPE
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>IELTS / TOEFL
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Business English
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Matura językowa
+                    </div>
+                </div>
+            </div>
+            <!-- German -->
+            <div class="bg-cream p-8 border-t border-ink/10 sm:border-t-0 sm:border-l sm:border-ink/10">
+                <div class="text-5xl mb-4">🇩🇪</div>
+                <p class="font-serif text-xl font-bold text-ink mb-1">Niemiecki</p>
+                <p class="text-xs text-ink/40 tracking-wide mb-4">A1 → C1</p>
+                <div class="space-y-1">
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Goethe-Zertifikat
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>TestDaF / DSH
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Deutsch im Beruf
+                    </div>
+                    <div class="text-xs text-ink/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-navy rounded-full flex-shrink-0"></span>Matura językowa
+                    </div>
+                </div>
+            </div>
+            <!-- Spanish -->
+            <div class="bg-navy p-8 border-t border-ink/10 sm:border-t-0 sm:border-l sm:border-cream/10">
+                <div class="text-5xl mb-4">🇪🇸</div>
+                <p class="font-serif text-xl font-bold text-cream mb-1">Hiszpański</p>
+                <p class="text-xs text-cream/40 tracking-wide mb-4">A1 → B2</p>
+                <div class="space-y-1">
+                    <div class="text-xs text-cream/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-cream/60 rounded-full flex-shrink-0"></span>DELE A2–B2
+                    </div>
+                    <div class="text-xs text-cream/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-cream/60 rounded-full flex-shrink-0"></span>SIELE
+                    </div>
+                    <div class="text-xs text-cream/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-cream/60 rounded-full flex-shrink-0"></span>Konwersacje
+                    </div>
+                    <div class="text-xs text-cream/60 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 bg-cream/60 rounded-full flex-shrink-0"></span>Matura językowa
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CEFR levels strip -->
+        <div class="border border-ink/10 p-5">
+            <p class="text-xs text-ink/40 tracking-[0.15em] uppercase mb-4">Poziom zaawansowania wg CEFR</p>
+            <div class="flex gap-0 text-center text-xs">
+                <div class="flex-1 bg-green-100 border border-green-200 py-2.5 font-medium text-green-800">A1</div>
+                <div class="flex-1 bg-green-200 border border-green-300 py-2.5 font-medium text-green-800">A2</div>
+                <div class="flex-1 bg-blue-100 border border-blue-200 py-2.5 font-medium text-blue-800">B1</div>
+                <div class="flex-1 bg-blue-200 border border-blue-300 py-2.5 font-medium text-blue-800">B2</div>
+                <div class="flex-1 bg-navy border border-navy py-2.5 font-medium text-cream">C1</div>
+                <div class="flex-1 bg-navy/90 border border-navy py-2.5 font-semibold text-cream">C2</div>
+            </div>
+            <p class="text-xs text-ink/40 mt-3 text-center">Pracujemy ze wszystkimi poziomami — od podstaw po zaawansowane</p>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Dynamic teacher grid -->
     {% if teachers %}
