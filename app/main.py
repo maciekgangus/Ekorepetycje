@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import routes_landing, routes_api, routes_admin
 from app.api import routes_auth, routes_profile, routes_teacher, routes_student
-from app.core.auth import _LoginRedirect
+from app.core.auth import _LoginRedirect, _WrongRole, _ROLE_HOME
 from app.core.config import settings
 from app.core.templates import templates
 
@@ -37,6 +37,12 @@ app.include_router(routes_admin.router)
 @app.exception_handler(_LoginRedirect)
 async def login_redirect_handler(request: Request, exc: _LoginRedirect) -> RedirectResponse:
     return RedirectResponse("/login", status_code=303)
+
+
+@app.exception_handler(_WrongRole)
+async def wrong_role_handler(request: Request, exc: _WrongRole) -> RedirectResponse:
+    # Send the user to their own dashboard instead of a 403 dead-end.
+    return RedirectResponse(_ROLE_HOME.get(exc.user.role, "/"), status_code=303)
 
 
 @app.exception_handler(403)

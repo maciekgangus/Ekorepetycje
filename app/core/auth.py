@@ -6,7 +6,7 @@ import uuid
 from typing import Any
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -64,11 +64,24 @@ def require_auth(user: User | None = Depends(get_current_user)) -> User:
     return user
 
 
+_ROLE_HOME = {
+    UserRole.ADMIN: "/admin/",
+    UserRole.TEACHER: "/teacher/",
+    UserRole.STUDENT: "/student/",
+}
+
+
+class _WrongRole(Exception):
+    """Raised when a logged-in user lacks the required role."""
+    def __init__(self, user: "User") -> None:
+        self.user = user
+
+
 def require_role(*roles: UserRole):
     """Dependency factory: require authenticated user with one of the given roles."""
     def _check(user: User = Depends(require_auth)) -> User:
         if user.role not in roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+            raise _WrongRole(user)
         return user
     return _check
 
