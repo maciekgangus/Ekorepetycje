@@ -96,9 +96,72 @@
                                        class="bg-gray-800 border border-gray-700 text-white text-xs px-2 py-1 rounded focus:outline-none w-28">
                                 <button type="submit" class="text-xs text-gray-400 hover:text-white">Reset hasła</button>
                             </form>
+                            {% if user.role.value == 'teacher' %}
+                            <!-- Teacher profile edit expand -->
+                            <button onclick="document.getElementById('profile-{{ user.id }}').classList.toggle('hidden')"
+                                    class="text-xs text-gray-400 hover:text-green-400 transition-colors">
+                                Edytuj profil
+                            </button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
+                {% if user.role.value == 'teacher' %}
+                <tr id="profile-{{ user.id }}" class="hidden bg-gray-800/20">
+                    <td colspan="4" class="px-6 py-4">
+                        <div class="flex flex-col sm:flex-row gap-6">
+                            <!-- Photo upload -->
+                            <div class="flex flex-col items-start gap-2 sm:w-48">
+                                {% if user.photo_url %}
+                                <img id="admin-photo-{{ user.id }}" src="{{ user.photo_url }}"
+                                     alt="{{ user.full_name }}" class="w-16 h-16 object-cover">
+                                {% else %}
+                                <div id="admin-photo-{{ user.id }}"
+                                     class="w-16 h-16 bg-gray-700 flex items-center justify-center text-white font-semibold">
+                                    {{ user.full_name.split()[0][0]|upper }}{{ user.full_name.split()[-1][0]|upper if user.full_name.split()|length > 1 else '' }}
+                                </div>
+                                {% endif %}
+                                <form enctype="multipart/form-data"
+                                      hx-post="/api/admin/teachers/{{ user.id }}/photo"
+                                      hx-target="#admin-photo-{{ user.id }}"
+                                      hx-swap="outerHTML">
+                                    <label class="cursor-pointer text-xs text-gray-400 hover:text-white">
+                                        Zmień zdjęcie
+                                        <input type="file" name="file" accept="image/jpeg,image/png"
+                                               class="hidden" onchange="this.form.requestSubmit()">
+                                    </label>
+                                </form>
+                            </div>
+                            <!-- Bio + specialties -->
+                            <form class="flex-1 space-y-3"
+                                  hx-patch="/api/admin/teachers/{{ user.id }}/profile"
+                                  hx-swap="none"
+                                  hx-on::after-request="document.getElementById('admin-saved-{{ user.id }}').classList.remove('hidden');setTimeout(()=>document.getElementById('admin-saved-{{ user.id }}').classList.add('hidden'),2000)">
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Bio</label>
+                                    <textarea name="bio" rows="3" maxlength="500"
+                                              class="w-full bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:border-green-500 resize-none"
+                                              >{{ user.bio or '' }}</textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Przedmioty</label>
+                                    <input type="text" name="specialties"
+                                           value="{{ user.specialties or '' }}"
+                                           placeholder="np. Matematyka,Fizyka"
+                                           class="w-full bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:border-green-500">
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button type="submit"
+                                            class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                                        Zapisz
+                                    </button>
+                                    <span id="admin-saved-{{ user.id }}" class="hidden text-xs text-green-400">Zapisano ✓</span>
+                                </div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
                 {% endfor %}
             </tbody>
         </table>
