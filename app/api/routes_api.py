@@ -599,7 +599,7 @@ async def update_unavail_series_from(
 
 # ─── Teacher profile: photo upload ────────────────────────────────────────────
 
-_PHOTO_DIR = Path("app/static/img/teachers")
+_PHOTO_DIR = Path(__file__).parent.parent / "static" / "img" / "teachers"
 _MAX_PHOTO_BYTES = 2_000_000
 
 
@@ -634,7 +634,16 @@ async def _save_teacher_photo(
     teacher: User,
     db: AsyncSession,
 ) -> HTMLResponse:
-    """Shared logic: validate, convert, save, update DB, return HTML fragment."""
+    """Shared logic: validate, convert, save, update DB, return HTML fragment.
+
+    The content_type check is a user-experience hint only — it is client-supplied
+    and therefore not a security gate. Pillow's UnidentifiedImageError is the real
+    guard against non-image payloads.
+
+    Both bio+specialties are always replaced on PATCH (PUT semantics). The HTMX
+    forms in the dashboard submit both fields together, so partial updates do not
+    occur in normal usage.
+    """
     if file.content_type not in ("image/jpeg", "image/png"):
         raise HTTPException(status_code=422, detail="Only JPEG or PNG images are accepted")
     data = await file.read()
@@ -650,8 +659,10 @@ async def _save_teacher_photo(
     photo_url = f"/static/img/teachers/{teacher.id}.jpg"
     teacher.photo_url = photo_url
     await db.flush()
+    # Use uuid4() as cache-buster so every re-upload produces a fresh URL.
+    cache_key = uuid.uuid4()
     return HTMLResponse(
-        f'<img id="teacher-photo" src="{photo_url}?v={teacher.id}" '
+        f'<img id="teacher-photo" src="{photo_url}?v={cache_key}" '
         f'alt="{teacher.full_name}" class="w-20 h-20 object-cover">'
     )
 

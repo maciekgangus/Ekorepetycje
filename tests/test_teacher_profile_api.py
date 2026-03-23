@@ -1,7 +1,6 @@
 """Tests for teacher photo upload and profile PATCH endpoints."""
 import io
-import pytest
-from httpx import AsyncClient, ASGITransport
+from httpx import AsyncClient
 from PIL import Image
 
 
