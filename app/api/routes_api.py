@@ -1,10 +1,14 @@
 """JSON API endpoints for FullCalendar hydration and admin data."""
 
+import io
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -591,3 +595,98 @@ async def update_unavail_series_from(
     await db.flush()
 
     return {"series_id": str(series_id), "blocks_updated": len(new_blocks)}
+
+
+# ─── Teacher profile: photo upload ────────────────────────────────────────────
+
+_PHOTO_DIR = Path("app/static/img/teachers")
+_MAX_PHOTO_BYTES = 2_000_000
+
+
+@router.post("/teachers/me/photo", response_class=HTMLResponse)
+async def upload_own_photo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_teacher_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Teacher uploads their own profile photo. Returns an HTML <img> fragment."""
+    return await _save_teacher_photo(file, current_user, db)
+
+
+@router.post("/admin/teachers/{teacher_id}/photo", response_class=HTMLResponse)
+async def admin_upload_teacher_photo(
+    teacher_id: UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_teacher_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> HTMLResponse:
+    """Admin uploads a photo for any teacher."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    teacher = await db.get(User, teacher_id)
+    if not teacher or teacher.role != UserRole.TEACHER:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    return await _save_teacher_photo(file, teacher, db)
+
+
+async def _save_teacher_photo(
+    file: UploadFile,
+    teacher: User,
+    db: AsyncSession,
+) -> HTMLResponse:
+    """Shared logic: validate, convert, save, update DB, return HTML fragment."""
+    if file.content_type not in ("image/jpeg", "image/png"):
+        raise HTTPException(status_code=422, detail="Only JPEG or PNG images are accepted")
+    data = await file.read()
+    if len(data) > _MAX_PHOTO_BYTES:
+        raise HTTPException(status_code=422, detail="Image must be under 2 MB")
+    try:
+        img = Image.open(io.BytesIO(data)).convert("RGB")
+    except UnidentifiedImageError:
+        raise HTTPException(status_code=422, detail="Invalid image file")
+    _PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _PHOTO_DIR / f"{teacher.id}.jpg"
+    img.save(dest, format="JPEG", quality=85)
+    photo_url = f"/static/img/teachers/{teacher.id}.jpg"
+    teacher.photo_url = photo_url
+    await db.flush()
+    return HTMLResponse(
+        f'<img id="teacher-photo" src="{photo_url}?v={teacher.id}" '
+        f'alt="{teacher.full_name}" class="w-20 h-20 object-cover">'
+    )
+
+
+# ─── Teacher profile: bio + specialties ───────────────────────────────────────
+
+@router.patch("/teachers/me/profile")
+async def update_own_profile(
+    bio: str = Form(default=""),
+    specialties: str = Form(default=""),
+    current_user: User = Depends(require_teacher_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Teacher updates their own bio and specialties."""
+    current_user.bio = bio.strip() or None
+    current_user.specialties = specialties.strip() or None
+    await db.flush()
+    return {"ok": True}
+
+
+@router.patch("/admin/teachers/{teacher_id}/profile")
+async def admin_update_teacher_profile(
+    teacher_id: UUID,
+    bio: str = Form(default=""),
+    specialties: str = Form(default=""),
+    current_user: User = Depends(require_teacher_or_admin),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Admin updates bio and specialties for any teacher."""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin only")
+    teacher = await db.get(User, teacher_id)
+    if not teacher or teacher.role != UserRole.TEACHER:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    teacher.bio = bio.strip() or None
+    teacher.specialties = specialties.strip() or None
+    await db.flush()
+    return {"ok": True}
