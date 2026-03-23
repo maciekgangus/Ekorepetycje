@@ -64,6 +64,64 @@
         {% endfor %}
     </div>
     {% endif %}
+
+    <!-- Profile edit card -->
+    <div class="mt-8 bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6">
+        <h2 class="text-lg font-semibold text-white mb-6">Mój profil publiczny</h2>
+        <div class="flex flex-col sm:flex-row gap-8">
+
+            <!-- Photo column -->
+            <div class="flex flex-col items-center gap-3 sm:w-32">
+                {% if user.photo_url %}
+                <img id="teacher-photo" src="{{ user.photo_url }}" alt="{{ user.full_name }}"
+                     class="w-20 h-20 object-cover">
+                {% else %}
+                <div id="teacher-photo"
+                     class="w-20 h-20 bg-gray-700 flex items-center justify-center text-gray-300 font-semibold text-xl">
+                    {{ user.full_name.split()[0][0]|upper }}{{ user.full_name.split()[-1][0]|upper if user.full_name.split()|length > 1 else '' }}
+                </div>
+                {% endif %}
+                <form enctype="multipart/form-data"
+                      hx-post="/api/teachers/me/photo"
+                      hx-target="#teacher-photo"
+                      hx-swap="outerHTML">
+                    <label class="cursor-pointer text-xs text-gray-400 hover:text-white transition-colors">
+                        Zmień zdjęcie
+                        <input type="file" name="file" accept="image/jpeg,image/png"
+                               class="hidden" onchange="this.form.requestSubmit()">
+                    </label>
+                </form>
+            </div>
+
+            <!-- Bio + specialties column -->
+            <form class="flex-1 space-y-4"
+                  hx-patch="/api/teachers/me/profile"
+                  hx-swap="none"
+                  hx-on::after-request="document.getElementById('profile-saved').classList.remove('hidden');setTimeout(()=>document.getElementById('profile-saved').classList.add('hidden'),2000)">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Bio</label>
+                    <textarea name="bio" maxlength="500" rows="4"
+                              class="w-full bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:border-green-500 resize-none"
+                              placeholder="Kilka słów o sobie, doświadczeniu, metodzie pracy...">{{ user.bio or '' }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Przedmioty (oddzielone przecinkiem)</label>
+                    <input type="text" name="specialties"
+                           value="{{ user.specialties or '' }}"
+                           placeholder="np. Matematyka,Fizyka"
+                           class="w-full bg-gray-800 border border-gray-700 text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:border-green-500">
+                    <p class="text-xs text-gray-500 mt-1">Używaj dokładnie: Matematyka, Fizyka, Informatyka, Języki</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                        Zapisz
+                    </button>
+                    <span id="profile-saved" class="hidden text-xs text-green-400">Zapisano ✓</span>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/htmx.org@1.9.12"></script>
