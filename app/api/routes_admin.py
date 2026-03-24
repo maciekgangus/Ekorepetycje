@@ -46,11 +46,18 @@ async def admin_dashboard(
 @router.get("/calendar", response_class=HTMLResponse)
 async def admin_calendar(
     request: Request,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin),
 ) -> HTMLResponse:
+    teachers = (await db.execute(
+        select(User).where(User.role == UserRole.TEACHER).order_by(User.full_name)
+    )).scalars().all()
+    students = (await db.execute(
+        select(User).where(User.role == UserRole.STUDENT).order_by(User.full_name)
+    )).scalars().all()
     return templates.TemplateResponse(
         request, "admin/calendar.html",
-        {"user": current_user},
+        {"user": current_user, "teachers": teachers, "students": students},
     )
 
 

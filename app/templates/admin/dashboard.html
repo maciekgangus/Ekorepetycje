@@ -38,13 +38,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
 
         <!-- Bar chart — 3 cols -->
-        <div class="lg:col-span-3 bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6">
-            <div class="flex items-center justify-between mb-5">
+        <div class="lg:col-span-3 bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6 flex flex-col">
+            <div class="flex items-center justify-between mb-5 flex-shrink-0">
                 <h2 class="text-base font-semibold text-white">Przychody — ostatnie 6 miesięcy</h2>
                 <span id="chart-total" class="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full"></span>
             </div>
-            <div class="relative h-52">
-                <canvas id="revenueChart"></canvas>
+            <div class="relative flex-1 min-h-[180px]">
+                <canvas id="revenueChart" class="absolute inset-0 w-full h-full"></canvas>
             </div>
         </div>
 

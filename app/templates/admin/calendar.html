@@ -24,9 +24,25 @@
     </div>
 
     <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-6">
-        <div class="flex items-center justify-between mb-3 px-1">
+        <div class="flex items-center justify-between mb-4 px-1 flex-wrap gap-3">
             <p class="text-xs text-gray-500">Kliknij na pusty slot lub zaznacz zakres, aby dodać zajęcia. Prawym przyciskiem — więcej opcji.</p>
-            <span id="fc-week-stats" class="text-xs font-medium text-gray-400 bg-gray-800 px-3 py-1 rounded-full"></span>
+            <div class="flex items-center gap-3">
+                <span id="fc-week-stats" class="text-xs font-medium text-gray-400 bg-gray-800 px-3 py-1 rounded-full"></span>
+                <select id="fc-user-filter"
+                        class="bg-gray-800 border border-gray-700 text-gray-300 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-blue-500/50 cursor-pointer">
+                    <option value="">Wszyscy</option>
+                    <optgroup label="— Nauczyciele —">
+                        {% for t in teachers %}
+                        <option value="teacher:{{ t.id }}">{{ t.full_name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="— Uczniowie —">
+                        {% for s in students %}
+                        <option value="student:{{ s.id }}">{{ s.full_name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
+            </div>
         </div>
         <div id="calendar" class="fc-dark"></div>
     </div>

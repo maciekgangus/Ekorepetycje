@@ -213,6 +213,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
                 func.extract('epoch', ScheduleEvent.end_time - ScheduleEvent.start_time)
                 / 3600.0 * Offering.base_price_per_hour
             ), 0))
+            .select_from(ScheduleEvent)
             .join(Offering, ScheduleEvent.offering_id == Offering.id)
             .where(
                 ScheduleEvent.status == EventStatus.COMPLETED,
