@@ -6,3 +6,56 @@
 .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
 .htmx-request .htmx-indicator { opacity: 1; }
 .htmx-request.htmx-indicator { opacity: 1; }
+
+/* ─── Hero entrance (CSS-driven, fires on page load) ────────────────────── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroFadeRight {
+  from { opacity: 0; transform: translateX(32px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.hero-anim {
+  opacity: 0;
+  animation: heroFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-anim-r {
+  opacity: 0;
+  animation: heroFadeRight 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ─── Scroll-reveal (triggered by IntersectionObserver via .is-visible) ── */
+@keyframes revealFadeUp {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes revealFadeLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes revealFadeRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+[data-animate] {
+  opacity: 0;
+}
+[data-animate].is-visible {
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-duration: 0.65s;
+}
+[data-animate="fade-up"].is-visible    { animation-name: revealFadeUp; }
+[data-animate="fade-left"].is-visible  { animation-name: revealFadeLeft; }
+[data-animate="fade-right"].is-visible { animation-name: revealFadeRight; }
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .hero-anim, .hero-anim-r, [data-animate] {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+}
