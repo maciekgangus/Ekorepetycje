@@ -1,6 +1,31 @@
 /**
  * FullCalendar initialization for the Ekorepetycje admin panel.
  */
+
+// ─── Teacher colour palette ────────────────────────────────────────────────────
+// 5 vivid colours that work on a dark background, one per teacher slot.
+const _TEACHER_PALETTE = [
+    { r: 59,  g: 130, b: 246 },   // blue
+    { r: 168, g: 85,  b: 247 },   // purple
+    { r: 245, g: 158, b: 11  },   // amber
+    { r: 236, g: 72,  b: 153 },   // pink
+    { r: 6,   g: 182, b: 212 },   // cyan
+];
+
+// Stable UUID → palette index (uses first 8 hex chars as uint32).
+function _teacherPaletteIdx(teacher_id) {
+    if (!teacher_id) return 0;
+    return parseInt(teacher_id.replace(/-/g, '').slice(0, 8), 16) % _TEACHER_PALETTE.length;
+}
+
+// Returns { bg, text } based on teacher identity + event status.
+function _eventColors(teacher_id, status) {
+    if (status === 'cancelled') return { bg: 'rgba(185,28,28,0.85)',  text: '#fca5a5' };
+    const { r, g, b } = _TEACHER_PALETTE[_teacherPaletteIdx(teacher_id)];
+    if (status === 'completed') return { bg: `rgba(${r},${g},${b},0.28)`, text: `rgba(${r},${g},${b},0.6)` };
+    return { bg: `rgba(${r},${g},${b},0.82)`, text: '#ffffff' };
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
@@ -42,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
             fetch('/api/events?' + params.toString())
                 .then(r => r.json())
                 .then(data => successCallback(data.map(function (rawEvent) {
+                    const col = _eventColors(rawEvent.teacher_id, rawEvent.status);
                     return {
                         id: rawEvent.id,
                         title: rawEvent.title,
@@ -54,10 +80,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             student_id: rawEvent.student_id,
                             series_id: rawEvent.series_id,
                         },
-                        color: rawEvent.status === 'completed' ? '#334155' :
-                               rawEvent.status === 'cancelled' ? '#b91c1c' : '#0d9488',
-                        textColor: rawEvent.status === 'completed' ? '#94a3b8' :
-                                   rawEvent.status === 'cancelled' ? '#fca5a5' : '#ccfbf1',
+                        color: col.bg,
+                        textColor: col.text,
                     };
                 })))
                 .catch(failureCallback);
@@ -197,8 +221,9 @@ async function _changeStatus(event, newStatus) {
     });
     if (r.ok) {
         event.setExtendedProp('status', newStatus);
-        event.setProp('color', _STATUS_COLORS[newStatus].bg);
-        event.setProp('textColor', _STATUS_COLORS[newStatus].text);
+        const col = _eventColors(event.extendedProps.teacher_id, newStatus);
+        event.setProp('color', col.bg);
+        event.setProp('textColor', col.text);
     }
 }
 
@@ -212,7 +237,7 @@ function _showTooltip(event, jsEvent) {
         tip.style.cssText = 'position:fixed;z-index:9998;pointer-events:none;max-width:220px;';
         document.body.appendChild(tip);
     }
-    const col = _STATUS_COLORS[event.extendedProps.status] || _STATUS_COLORS.scheduled;
+    const col = _eventColors(event.extendedProps.teacher_id, event.extendedProps.status);
     const statusLabel = _STATUS_PL[event.extendedProps.status] || event.extendedProps.status;
     tip.innerHTML = `
         <div style="background:rgba(10,15,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.4);padding:10px 13px;">
