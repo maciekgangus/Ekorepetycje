@@ -1,0 +1,10 @@
+tunnel: {{ cloudflare_tunnel_uuid }}
+credentials-file: /etc/cloudflared/{{ cloudflare_tunnel_uuid }}.json
+
+ingress:
+  - hostname: {{ cloudflare_tunnel_hostname }}
+    service: http://localhost:{{ app_port }}
+    originRequest:
+      connectTimeout: 30s
+      noTLSVerify: false
+  - service: http_status:404

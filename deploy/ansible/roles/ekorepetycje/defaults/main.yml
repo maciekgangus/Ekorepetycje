@@ -1,0 +1,26 @@
+---
+# Deployment target
+app_user: ubuntu
+app_dir: /opt/ekorepetycje
+app_repo: https://github.com/your-org/ekorepetycje.git
+app_branch: main
+
+# Docker
+docker_compose_version: "2"   # uses the compose plugin (v2)
+
+# App runtime
+app_port: 8000
+app_workers: 2
+
+# Cloudflare Tunnel
+cloudflare_tunnel_enabled: true
+cloudflare_tunnel_uuid: ""        # set in vault.yml
+cloudflare_tunnel_hostname: ""    # e.g. ekorepetycje.yourdomain.com
+
+# These MUST be set in group_vars/all/vault.yml (ansible-vault encrypted)
+# vault_db_password: ""
+# vault_secret_key: ""
+# vault_resend_api_key: ""
+# vault_resend_from_email: ""
+# vault_turnstile_secret_key: ""
+# vault_cloudflare_tunnel_credentials: ""   # contents of the .json credentials file
