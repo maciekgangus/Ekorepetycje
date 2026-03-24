@@ -31,30 +31,36 @@ document.addEventListener('DOMContentLoaded', function () {
         eventColor: '#0d9488',
         eventTextColor: '#ccfbf1',
 
-        events: {
-            url: '/api/events',
-            method: 'GET',
-            failure: function () { console.error('Failed to load events'); },
-        },
-
-        eventDataTransform: function (rawEvent) {
-            return {
-                id: rawEvent.id,
-                title: rawEvent.title,
-                start: rawEvent.start_time,
-                end: rawEvent.end_time,
-                extendedProps: {
-                    status: rawEvent.status,
-                    offering_id: rawEvent.offering_id,
-                    teacher_id: rawEvent.teacher_id,
-                    student_id: rawEvent.student_id,
-                    series_id: rawEvent.series_id,
-                },
-                color: rawEvent.status === 'completed' ? '#334155' :
-                       rawEvent.status === 'cancelled' ? '#b91c1c' : '#0d9488',
-                textColor: rawEvent.status === 'completed' ? '#94a3b8' :
-                           rawEvent.status === 'cancelled' ? '#fca5a5' : '#ccfbf1',
-            };
+        events: function (fetchInfo, successCallback, failureCallback) {
+            const params = new URLSearchParams();
+            const sel = document.getElementById('fc-user-filter');
+            if (sel && sel.value) {
+                const [type, id] = sel.value.split(':');
+                if (type === 'teacher') params.set('teacher_id', id);
+                else if (type === 'student') params.set('student_id', id);
+            }
+            fetch('/api/events?' + params.toString())
+                .then(r => r.json())
+                .then(data => successCallback(data.map(function (rawEvent) {
+                    return {
+                        id: rawEvent.id,
+                        title: rawEvent.title,
+                        start: rawEvent.start_time,
+                        end: rawEvent.end_time,
+                        extendedProps: {
+                            status: rawEvent.status,
+                            offering_id: rawEvent.offering_id,
+                            teacher_id: rawEvent.teacher_id,
+                            student_id: rawEvent.student_id,
+                            series_id: rawEvent.series_id,
+                        },
+                        color: rawEvent.status === 'completed' ? '#334155' :
+                               rawEvent.status === 'cancelled' ? '#b91c1c' : '#0d9488',
+                        textColor: rawEvent.status === 'completed' ? '#94a3b8' :
+                                   rawEvent.status === 'cancelled' ? '#fca5a5' : '#ccfbf1',
+                    };
+                })))
+                .catch(failureCallback);
         },
 
         // ── Drag-to-create ────────────────────────────────────────────────────
@@ -113,6 +119,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar.render();
     window._calendar = calendar;
+
+    // ── User filter dropdown ──────────────────────────────────────────────────
+    const filterSel = document.getElementById('fc-user-filter');
+    if (filterSel) {
+        filterSel.addEventListener('change', function () {
+            calendar.refetchEvents();
+        });
+    }
 
     // ── Right-click ───────────────────────────────────────────────────────────
     calendarEl.addEventListener('contextmenu', function (e) {
