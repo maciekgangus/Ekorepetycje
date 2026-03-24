@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
             {
                 url: `/api/availability/${window.TEACHER_ID}`,
                 display: 'background',
-                color: '#6b7280',
+                color: 'rgba(100,116,139,0.25)',
                 failure: function () { console.error('Failed to load availability'); },
             },
         ],
@@ -55,17 +55,21 @@ document.addEventListener('DOMContentLoaded', function () {
                     student_id: rawEvent.student_id,
                     series_id: rawEvent.series_id,
                 },
-                color: rawEvent.status === 'completed' ? '#4b5563' :
-                       rawEvent.status === 'cancelled' ? '#ef4444' : '#22c55e',
-                textColor: '#030712',
+                color: rawEvent.status === 'completed' ? '#334155' :
+                       rawEvent.status === 'cancelled' ? '#b91c1c' : '#0d9488',
+                textColor: rawEvent.status === 'completed' ? '#94a3b8' :
+                           rawEvent.status === 'cancelled' ? '#fca5a5' : '#ccfbf1',
             };
         },
 
-        // ── Drag-to-create on empty slot ──────────────────────────────────────
         select: function (info) {
             const durationMin = Math.round((info.end - info.start) / 60000);
-            const dateStr = info.startStr.split('T')[0];
-            openSeriesPanelWithTime(dateStr, info.start.getHours(), info.start.getMinutes(), durationMin);
+            openSeriesPanelWithTime(
+                info.startStr.split('T')[0],
+                info.start.getHours(),
+                info.start.getMinutes(),
+                durationMin
+            );
             calendar.unselect();
         },
 
@@ -78,13 +82,15 @@ document.addEventListener('DOMContentLoaded', function () {
             );
         },
 
+        // ── Left-click on event → context menu ───────────────────────────────
         eventClick: function (info) {
             info.jsEvent.preventDefault();
+            info.jsEvent.stopPropagation(); // prevents old { once } listener from closing new menu
             _showTeacherContextMenu(info.event, info.jsEvent);
         },
 
         eventMouseEnter: function (info) { _showTeacherTooltip(info.event, info.jsEvent); },
-        eventMouseLeave: function () { _hideTeacherTooltip(); },
+        eventMouseLeave: function ()      { _hideTeacherTooltip(); },
 
         eventsSet: function (events) { _updateTeacherWeekStats(events, calendar); },
     });
@@ -96,11 +102,10 @@ document.addEventListener('DOMContentLoaded', function () {
     calendarEl.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         _hideTeacherTooltip();
-        const eventEl = e.target.closest('.fc-event');
-        if (!eventEl) {
+        if (!e.target.closest('.fc-event')) {
             const slotEl = e.target.closest('.fc-timegrid-slot');
-            const dataTime = slotEl ? slotEl.getAttribute('data-time') : '';
-            const [h, m] = dataTime ? dataTime.slice(0, 5).split(':').map(Number) : [9, 0];
+            const t = slotEl ? slotEl.getAttribute('data-time') : '';
+            const [h, m] = t ? t.slice(0, 5).split(':').map(Number) : [9, 0];
             const colEl = e.target.closest('[data-date]');
             const dateStr = colEl ? colEl.getAttribute('data-date') : new Date().toISOString().split('T')[0];
             openSeriesPanelWithTime(dateStr, h, m, 60);
@@ -111,37 +116,44 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.key === 'Escape') {
             closeSeriesPanel();
             if (typeof closeUnavailPanel === 'function') closeUnavailPanel();
+            _closeTeacherMenu();
         }
     });
 });
 
-// ─── Tooltip ─────────────────────────────────────────────────────────────────
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
 
 const _T_STATUS_PL = { scheduled: 'Zaplanowane', completed: 'Ukończone', cancelled: 'Odwołane' };
+const _T_STATUS_COLORS = {
+    scheduled: '#0d9488',
+    completed: '#475569',
+    cancelled: '#ef4444',
+};
 
 function _showTeacherTooltip(event, jsEvent) {
     let tip = document.getElementById('fc-tooltip');
     if (!tip) {
         tip = document.createElement('div');
         tip.id = 'fc-tooltip';
-        tip.className = 'fixed z-[70] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl px-4 py-3 text-sm pointer-events-none max-w-[240px]';
+        tip.style.cssText = 'position:fixed;z-index:9998;pointer-events:none;max-width:220px;';
         document.body.appendChild(tip);
     }
-    const status = event.extendedProps.status;
-    const dotColor = status === 'completed' ? '#6b7280' : status === 'cancelled' ? '#ef4444' : '#22c55e';
+    const col = _T_STATUS_COLORS[event.extendedProps.status] || _T_STATUS_COLORS.scheduled;
+    const statusLabel = _T_STATUS_PL[event.extendedProps.status] || event.extendedProps.status;
     tip.innerHTML = `
-        <p class="font-semibold text-white mb-1 leading-tight">${event.title}</p>
-        <p class="text-xs text-gray-400 flex items-center gap-1.5">
-            <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span>
-            ${_T_STATUS_PL[status] || status}
-        </p>
-        ${event.extendedProps.series_id ? '<p class="text-xs text-green-400 mt-1">↻ Zajęcia cykliczne</p>' : ''}
-    `;
+        <div style="background:rgba(10,15,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.4);padding:10px 13px;">
+            <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${event.title}</p>
+            <p style="font-size:11px;color:#64748b;margin:0;display:flex;align-items:center;gap:5px">
+                <span style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
+                ${statusLabel}
+            </p>
+            ${event.extendedProps.series_id ? '<p style="font-size:11px;color:#38bdf8;margin:4px 0 0">↻ Zajęcia cykliczne</p>' : ''}
+        </div>`;
     tip.style.display = 'block';
     const x = jsEvent.clientX + 14;
     const y = jsEvent.clientY - 10;
-    tip.style.left = (x + 240 > window.innerWidth ? x - 260 : x) + 'px';
-    tip.style.top = Math.min(y, window.innerHeight - 120) + 'px';
+    tip.style.left = (x + 220 > window.innerWidth ? x - 240 : x) + 'px';
+    tip.style.top  = Math.min(y, window.innerHeight - 100) + 'px';
 }
 
 function _hideTeacherTooltip() {
@@ -154,9 +166,9 @@ function _hideTeacherTooltip() {
 function _updateTeacherWeekStats(events, calendar) {
     const statsEl = document.getElementById('fc-week-stats');
     if (!statsEl) return;
-    const view = calendar.view;
+    const { activeStart, activeEnd } = calendar.view;
     const visible = events.filter(e =>
-        e.display !== 'background' && e.start >= view.activeStart && e.start < view.activeEnd
+        e.display !== 'background' && e.start >= activeStart && e.start < activeEnd
     );
     const totalMs = visible.reduce((s, e) => s + (e.end ? e.end - e.start : 3600000), 0);
     const h = Math.floor(totalMs / 3600000);
@@ -168,72 +180,83 @@ function _updateTeacherWeekStats(events, calendar) {
 
 let _activeTeacherMenu = null;
 
-function _showTeacherContextMenu(event, jsEvent) {
+function _closeTeacherMenu() {
     if (_activeTeacherMenu) { _activeTeacherMenu.remove(); _activeTeacherMenu = null; }
+}
+
+const _T_ICO_SERIES = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>';
+const _T_ICO_DEL   = '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>';
+
+function _showTeacherContextMenu(event, jsEvent) {
+    _closeTeacherMenu();
     _hideTeacherTooltip();
 
     const seriesId = event.extendedProps.series_id;
     const menu = document.createElement('div');
-    menu.className = 'fixed z-50 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-1.5 min-w-[220px] text-sm';
+    menu.style.cssText = [
+        'position:fixed;z-index:9999;',
+        'background:rgba(10,15,30,0.97);',
+        'backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);',
+        'border:1px solid rgba(255,255,255,0.1);',
+        'border-radius:12px;',
+        'box-shadow:0 24px 64px rgba(0,0,0,0.55),0 4px 16px rgba(0,0,0,0.3);',
+        'padding:5px 0;min-width:228px;',
+        'animation:fcMenuIn 0.15s cubic-bezier(0.22,1,0.36,1) forwards;',
+    ].join('');
     menu.style.left = jsEvent.pageX + 'px';
-    menu.style.top = jsEvent.pageY + 'px';
+    menu.style.top  = jsEvent.pageY + 'px';
 
-    const items = seriesId ? [
-        { label: 'Edytuj tę i następne', action: () => openSeriesPanelEdit(seriesId, event.id) },
-        { divider: true },
-        {
-            label: 'Usuń tę lekcję', danger: true,
-            action: async () => {
-                if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-                const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
-                if (r.ok) event.remove();
-            },
-        },
-        {
-            label: 'Usuń tę i następne', danger: true,
-            action: async () => {
-                if (!confirm('Usuń tę i wszystkie następne lekcje z serii?')) return;
-                const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE' });
-                if (r.ok && window._calendar) window._calendar.refetchEvents();
-            },
-        },
-    ] : [
-        {
-            label: 'Usuń lekcję', danger: true,
-            action: async () => {
-                if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-                const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
-                if (r.ok) event.remove();
-            },
-        },
-    ];
+    // Header
+    const safe = event.title.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const hdr = document.createElement('div');
+    hdr.style.cssText = 'padding:9px 14px 8px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:3px;';
+    hdr.innerHTML = `<p style="font-size:11px;font-weight:600;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;margin:0">${safe}</p>`;
+    menu.appendChild(hdr);
 
-    items.forEach(item => {
-        if (item.divider) {
-            const hr = document.createElement('div');
-            hr.className = 'border-t border-gray-800 my-1';
-            menu.appendChild(hr);
-            return;
-        }
+    const _addItem = (iconSvg, label, danger, action) => {
+        const clr = danger ? '#f87171' : '#e2e8f0';
+        const hBg = danger ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.07)';
         const btn = document.createElement('button');
-        btn.className = `w-full text-left px-4 py-2 transition-colors ${
-            item.danger ? 'text-red-400 hover:bg-red-500/10' : 'text-gray-200 hover:bg-gray-800'
-        }`;
-        btn.textContent = item.label;
-        btn.onclick = () => { menu.remove(); _activeTeacherMenu = null; item.action(); };
+        btn.style.cssText = `width:100%;display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:13px;text-align:left;cursor:pointer;background:transparent;border:none;color:${clr};line-height:1.3;`;
+        btn.onmouseenter = () => { btn.style.background = hBg; };
+        btn.onmouseleave = () => { btn.style.background = 'transparent'; };
+        btn.innerHTML = `<span style="flex-shrink:0;opacity:0.65;display:flex;align-items:center">${iconSvg}</span><span>${label}</span>`;
+        btn.onclick = () => { _closeTeacherMenu(); action(); };
         menu.appendChild(btn);
-    });
+    };
+
+    if (seriesId) {
+        _addItem(_T_ICO_SERIES, 'Edytuj tę i następne', false, () => openSeriesPanelEdit(seriesId, event.id));
+        // Divider
+        const div = document.createElement('div');
+        div.style.cssText = 'height:1px;background:rgba(255,255,255,0.07);margin:4px 0;';
+        menu.appendChild(div);
+        _addItem(_T_ICO_DEL, 'Usuń tę lekcję', true, async () => {
+            if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            if (r.ok) event.remove();
+        });
+        _addItem(_T_ICO_DEL, 'Usuń tę i następne', true, async () => {
+            if (!confirm('Usuń tę i wszystkie następne lekcje z serii?')) return;
+            const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE' });
+            if (r.ok && window._calendar) window._calendar.refetchEvents();
+        });
+    } else {
+        _addItem(_T_ICO_DEL, 'Usuń lekcję', true, async () => {
+            if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            if (r.ok) event.remove();
+        });
+    }
 
     document.body.appendChild(menu);
     _activeTeacherMenu = menu;
 
     requestAnimationFrame(() => {
-        const rect = menu.getBoundingClientRect();
-        if (rect.right > window.innerWidth) menu.style.left = (jsEvent.pageX - rect.width) + 'px';
-        if (rect.bottom > window.innerHeight) menu.style.top = (jsEvent.pageY - rect.height) + 'px';
+        const r = menu.getBoundingClientRect();
+        if (r.right  > window.innerWidth)  menu.style.left = (jsEvent.pageX - r.width)  + 'px';
+        if (r.bottom > window.innerHeight) menu.style.top  = (jsEvent.pageY - r.height) + 'px';
     });
 
-    setTimeout(() => document.addEventListener('click', () => {
-        if (_activeTeacherMenu) { _activeTeacherMenu.remove(); _activeTeacherMenu = null; }
-    }, { once: true }), 0);
+    setTimeout(() => document.addEventListener('click', _closeTeacherMenu, { once: true }), 0);
 }
