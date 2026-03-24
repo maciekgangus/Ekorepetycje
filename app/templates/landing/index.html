@@ -482,6 +482,9 @@
             </p>
         </div>
 
+        <!-- Error banner — targeted by HX-Retarget on validation/captcha failure -->
+        <div id="contact-error"></div>
+
         <form id="contact-form"
               hx-post="/contact/submit"
               hx-target="#contact-form"
@@ -517,6 +520,12 @@
                           class="w-full bg-cream/5 border border-cream/15 px-4 py-3 text-cream placeholder-cream/25 focus:outline-none focus:border-cream/40 transition-colors resize-none text-sm"
                           placeholder="Opisz swój poziom, cel i kiedy chcesz zacząć…"></textarea>
             </div>
+
+            <!-- Cloudflare Turnstile widget -->
+            <div class="cf-turnstile"
+                 data-sitekey="{{ turnstile_site_key }}"
+                 data-theme="dark"
+                 data-response-field-name="cf_turnstile_response"></div>
 
             <button type="submit"
                     class="w-full bg-cream hover:bg-cream/90 text-navy font-medium py-3.5 transition-colors flex items-center justify-center gap-2 tracking-wide text-sm">
@@ -557,7 +566,23 @@
         });
     });
 
+    // Turnstile explicit rendering — also re-runs after HTMX swaps so the
+    // widget is re-initialised when the form is replaced on validation error.
+    function renderTurnstile() {
+        document.querySelectorAll('.cf-turnstile:not([data-ts-rendered])').forEach(function(el) {
+            if (window.turnstile) {
+                turnstile.render(el, {
+                    sitekey: el.dataset.sitekey,
+                    theme: el.dataset.theme || 'auto',
+                    'response-field-name': el.dataset.responseFieldName || 'cf-turnstile-response',
+                });
+                el.dataset.tsRendered = '1';
+            }
+        });
+    }
+    document.addEventListener('htmx:afterSettle', renderTurnstile);
 </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=renderTurnstile&render=explicit" async defer></script>
 {% endblock %}
 
 <!--

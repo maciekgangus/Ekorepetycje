@@ -14,6 +14,7 @@ passlib[bcrypt]
 bcrypt<4.0.0
 itsdangerous
 Pillow
+resend
 pytest
 pytest-asyncio
 anyio[trio]

@@ -2,6 +2,7 @@
 
 import uuid
 
+import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
@@ -9,12 +10,42 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
+from app.core.config import settings
 from app.core.templates import templates
 from app.models.users import User, UserRole
 from app.schemas.contact import ContactForm
 from app.services.email import send_contact_email
 
 router = APIRouter()
+
+_TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+
+
+async def _verify_turnstile(token: str, remote_ip: str | None = None) -> bool:
+    """Verify a Cloudflare Turnstile token server-side. Returns True on success."""
+    if not token:
+        return False
+    payload: dict = {"secret": settings.TURNSTILE_SECRET_KEY, "response": token}
+    if remote_ip:
+        payload["remoteip"] = remote_ip
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.post(_TURNSTILE_VERIFY_URL, data=payload)
+        return bool(resp.json().get("success", False))
+    except Exception:
+        return False
+
+
+def _captcha_error(request: Request, message: str, status: int) -> HTMLResponse:
+    """Return an error fragment that HTMX redirects to #contact-error (not the form)."""
+    response = templates.TemplateResponse(
+        request, "components/contact_error.html",
+        {"error": message},
+        status_code=status,
+    )
+    response.headers["HX-Retarget"] = "#contact-error"
+    response.headers["HX-Reswap"] = "outerHTML"
+    return response
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -34,14 +65,20 @@ async def landing_page(
     featured_teachers = result.scalars().all()
     return templates.TemplateResponse(
         request, "landing/index.html",
-        {"featured_teachers": featured_teachers},
+        {
+            "featured_teachers": featured_teachers,
+            "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+        },
     )
 
 
 @router.get("/contact", response_class=HTMLResponse)
 async def contact_page(request: Request) -> HTMLResponse:
-    """Render the contact page."""
-    return templates.TemplateResponse(request, "landing/contact.html")
+    """Render the standalone contact page."""
+    return templates.TemplateResponse(
+        request, "landing/contact.html",
+        {"turnstile_site_key": settings.TURNSTILE_SITE_KEY},
+    )
 
 
 @router.post("/contact/submit", response_class=HTMLResponse)
@@ -49,17 +86,31 @@ async def submit_contact(
     request: Request,
     name: str = Form(...),
     email: str = Form(...),
+    subject: str = Form(""),
     message: str = Form(...),
+    cf_turnstile_response: str = Form(""),
 ) -> HTMLResponse:
-    """Handle contact form submissions and return an HTMX success fragment."""
-    try:
-        form = ContactForm(name=name, email=email, message=message)
-    except ValidationError:
-        return templates.TemplateResponse(
-            request, "components/contact_error.html",
-            {"error": "Nieprawidłowy adres e-mail. Sprawdź wpisany adres."},
-            status_code=422,
+    """Handle contact form submission with Turnstile verification."""
+    # 1 — Verify CAPTCHA
+    client_ip = request.client.host if request.client else None
+    if not await _verify_turnstile(cf_turnstile_response, client_ip):
+        return _captcha_error(
+            request,
+            "Weryfikacja CAPTCHA nie powiodła się. Odśwież stronę i spróbuj ponownie.",
+            400,
         )
+
+    # 2 — Validate fields
+    try:
+        form = ContactForm(name=name, email=email, subject=subject, message=message)
+    except ValidationError:
+        return _captcha_error(
+            request,
+            "Nieprawidłowy adres e-mail. Sprawdź wpisany adres.",
+            422,
+        )
+
+    # 3 — Send email (falls back to logging if RESEND_API_KEY is not set)
     await send_contact_email(form)
     return templates.TemplateResponse(request, "components/contact_success.html")
 
