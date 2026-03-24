@@ -1,0 +1,217 @@
+---
+# ── 1. System packages ─────────────────────────────────────────────────────────
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  tags: [bootstrap]
+
+- name: Install system dependencies
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - ca-certificates
+      - gnupg
+      - ufw
+      - python3-pip
+    state: present
+  tags: [bootstrap]
+
+# ── 2. Docker ──────────────────────────────────────────────────────────────────
+- name: Add Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /usr/share/keyrings/docker.asc
+    mode: "0644"
+  tags: [docker]
+
+- name: Add Docker apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch=amd64 signed-by=/usr/share/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu
+      {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+  tags: [docker]
+
+- name: Install Docker CE + Compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+  tags: [docker]
+
+- name: Add app user to docker group
+  ansible.builtin.user:
+    name: "{{ app_user }}"
+    groups: docker
+    append: true
+  tags: [docker]
+
+- name: Enable and start Docker
+  ansible.builtin.systemd:
+    name: docker
+    enabled: true
+    state: started
+  tags: [docker]
+
+# ── 3. Cloudflared ────────────────────────────────────────────────────────────
+- name: Add Cloudflare GPG key
+  ansible.builtin.get_url:
+    url: https://pkg.cloudflare.com/cloudflare-main.gpg
+    dest: /usr/share/keyrings/cloudflare-main.gpg
+    mode: "0644"
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Add cloudflared apt repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg]
+      https://pkg.cloudflare.com/cloudflared
+      {{ ansible_distribution_release }} main
+    filename: cloudflared
+    state: present
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Install cloudflared
+  ansible.builtin.apt:
+    name: cloudflared
+    state: present
+    update_cache: true
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Create cloudflared config directory
+  ansible.builtin.file:
+    path: /etc/cloudflared
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Write cloudflared tunnel credentials file
+  ansible.builtin.copy:
+    content: "{{ vault_cloudflare_tunnel_credentials }}"
+    dest: "/etc/cloudflared/{{ cloudflare_tunnel_uuid }}.json"
+    owner: root
+    group: root
+    mode: "0600"
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Write cloudflared config.yml
+  ansible.builtin.template:
+    src: cloudflared.yml.j2
+    dest: /etc/cloudflared/config.yml
+    owner: root
+    group: root
+    mode: "0644"
+  when: cloudflare_tunnel_enabled
+  notify: Restart cloudflared
+  tags: [cloudflare]
+
+- name: Install cloudflared systemd service
+  ansible.builtin.command: cloudflared service install
+  args:
+    creates: /etc/systemd/system/cloudflared.service
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+- name: Enable and start cloudflared
+  ansible.builtin.systemd:
+    name: cloudflared
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: cloudflare_tunnel_enabled
+  tags: [cloudflare]
+
+# ── 4. Application ────────────────────────────────────────────────────────────
+- name: Clone / update repository
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "{{ app_branch }}"
+    force: true
+  become_user: "{{ app_user }}"
+  notify: Redeploy application
+  tags: [deploy]
+
+- name: Write .env file
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/.env"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0600"
+  notify: Redeploy application
+  tags: [deploy, config]
+
+- name: Write production docker-compose override
+  ansible.builtin.template:
+    src: docker-compose.prod.yml.j2
+    dest: "{{ app_dir }}/docker-compose.prod.yml"
+    owner: "{{ app_user }}"
+    group: "{{ app_user }}"
+    mode: "0644"
+  notify: Redeploy application
+  tags: [deploy, config]
+
+- name: Create postgres_data named volume
+  community.docker.docker_volume:
+    name: postgres_data
+    state: present
+  tags: [deploy]
+
+- name: Pull and build images
+  ansible.builtin.command: >
+    docker compose
+    -f {{ app_dir }}/docker-compose.yml
+    -f {{ app_dir }}/docker-compose.prod.yml
+    up -d --build --remove-orphans
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ app_user }}"
+  tags: [deploy]
+
+- name: Run Alembic migrations
+  ansible.builtin.command: >
+    docker compose
+    -f {{ app_dir }}/docker-compose.yml
+    -f {{ app_dir }}/docker-compose.prod.yml
+    exec -T web alembic upgrade head
+  args:
+    chdir: "{{ app_dir }}"
+  become_user: "{{ app_user }}"
+  tags: [deploy, migrate]
+
+# ── 5. Firewall ───────────────────────────────────────────────────────────────
+- name: Set UFW default policies
+  community.general.ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+  tags: [firewall]
+
+- name: Allow SSH
+  community.general.ufw:
+    rule: allow
+    name: OpenSSH
+  tags: [firewall]
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+  tags: [firewall]

@@ -1,0 +1,17 @@
+# Encrypt this file with: ansible-vault encrypt group_vars/all/vault.yml
+# Create it with:         ansible-vault create group_vars/all/vault.yml
+
+vault_db_password: "change-me-strong-db-password"
+vault_secret_key: "change-me-64-random-hex-chars"
+vault_resend_api_key: "re_xxxxxxxxxxxxxxxxxxxx"
+vault_resend_from_email: "noreply@yourdomain.com"
+vault_turnstile_secret_key: "0x4AAAAAAA..."
+
+# Paste the full contents of your Cloudflare tunnel credentials JSON here
+# (the file at ~/.cloudflared/<tunnel-uuid>.json after `cloudflared tunnel create`)
+vault_cloudflare_tunnel_credentials: |
+  {
+    "AccountTag": "...",
+    "TunnelSecret": "...",
+    "TunnelID": "..."
+  }
