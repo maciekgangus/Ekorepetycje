@@ -2,7 +2,7 @@
 
 import io
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -183,50 +183,125 @@ async def get_students(
 
 @router.get("/stats")
 async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
-    """Return basic statistics for the admin dashboard."""
-    total_events = (await db.execute(select(func.count(ScheduleEvent.id)))).scalar_one()
-    scheduled = (
-        await db.execute(
-            select(func.count(ScheduleEvent.id)).where(
-                ScheduleEvent.status == EventStatus.SCHEDULED
+    """Return statistics for the admin dashboard including revenue and teacher breakdown."""
+    now = datetime.now(timezone.utc)
+
+    # ── Month boundaries ──────────────────────────────────────────────────────
+    def month_start(y: int, m: int) -> datetime:
+        return datetime(y, m, 1, tzinfo=timezone.utc)
+
+    def next_month(y: int, m: int) -> datetime:
+        return datetime(y + 1, 1, 1, tzinfo=timezone.utc) if m == 12 else datetime(y, m + 1, 1, tzinfo=timezone.utc)
+
+    def prev_month(y: int, m: int) -> tuple[int, int]:
+        return (y - 1, 12) if m == 1 else (y, m - 1)
+
+    cur_start  = month_start(now.year, now.month)
+    cur_end    = next_month(now.year, now.month)
+    py, pm     = prev_month(now.year, now.month)
+    prev_start = month_start(py, pm)
+    prev_end   = cur_start
+
+    # Week boundaries (Mon–Sun)
+    week_start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_end   = week_start + timedelta(days=7)
+
+    # ── Revenue helper (completed events × price/h × duration_h) ─────────────
+    def _revenue_q(start: datetime, end: datetime):
+        return (
+            select(func.coalesce(func.sum(
+                func.extract('epoch', ScheduleEvent.end_time - ScheduleEvent.start_time)
+                / 3600.0 * Offering.base_price_per_hour
+            ), 0))
+            .join(Offering, ScheduleEvent.offering_id == Offering.id)
+            .where(
+                ScheduleEvent.status == EventStatus.COMPLETED,
+                ScheduleEvent.start_time >= start,
+                ScheduleEvent.start_time < end,
             )
         )
-    ).scalar_one()
-    completed = (
-        await db.execute(
-            select(func.count(ScheduleEvent.id)).where(
-                ScheduleEvent.status == EventStatus.COMPLETED
-            )
-        )
-    ).scalar_one()
-    cancelled = (
-        await db.execute(
-            select(func.count(ScheduleEvent.id)).where(
-                ScheduleEvent.status == EventStatus.CANCELLED
-            )
-        )
-    ).scalar_one()
+
+    # ── Basic counts ──────────────────────────────────────────────────────────
+    total_events    = (await db.execute(select(func.count(ScheduleEvent.id)))).scalar_one()
+    scheduled       = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.SCHEDULED))).scalar_one()
+    completed_total = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.COMPLETED))).scalar_one()
+    cancelled       = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.status == EventStatus.CANCELLED))).scalar_one()
+    total_teachers  = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.TEACHER))).scalar_one()
+    total_students  = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.STUDENT))).scalar_one()
     total_offerings = (await db.execute(select(func.count(Offering.id)))).scalar_one()
-    total_teachers = (
-        await db.execute(
-            select(func.count(User.id)).where(User.role == UserRole.TEACHER)
+    pending_proposals = (await db.execute(select(func.count(RescheduleProposal.id)).where(RescheduleProposal.status == ProposalStatus.PENDING))).scalar_one()
+
+    # ── Lesson counts ─────────────────────────────────────────────────────────
+    lessons_this_week  = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.start_time >= week_start, ScheduleEvent.start_time < week_end, ScheduleEvent.status != EventStatus.CANCELLED))).scalar_one()
+    lessons_this_month = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.start_time >= cur_start,  ScheduleEvent.start_time < cur_end,  ScheduleEvent.status != EventStatus.CANCELLED))).scalar_one()
+    lessons_last_month = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.start_time >= prev_start, ScheduleEvent.start_time < prev_end, ScheduleEvent.status != EventStatus.CANCELLED))).scalar_one()
+
+    # ── Revenue ───────────────────────────────────────────────────────────────
+    revenue_this_month = float((await db.execute(_revenue_q(cur_start, cur_end))).scalar_one())
+    revenue_last_month = float((await db.execute(_revenue_q(prev_start, prev_end))).scalar_one())
+
+    # 6-month trend (current month + 5 previous)
+    revenue_by_month = []
+    for i in range(5, -1, -1):
+        y, m = now.year, now.month
+        for _ in range(i):
+            y, m = prev_month(y, m)
+        ms = month_start(y, m)
+        me = next_month(y, m)
+        rev = float((await db.execute(_revenue_q(ms, me))).scalar_one())
+        cnt = (await db.execute(
+            select(func.count(ScheduleEvent.id))
+            .where(ScheduleEvent.start_time >= ms, ScheduleEvent.start_time < me,
+                   ScheduleEvent.status == EventStatus.COMPLETED)
+        )).scalar_one()
+        revenue_by_month.append({"month": f"{y:04d}-{m:02d}", "revenue": rev, "count": cnt})
+
+    avg_6mo = sum(x["revenue"] for x in revenue_by_month) / 6
+
+    # ── Teacher breakdown (lessons + revenue this month) ──────────────────────
+    teacher_rows = (await db.execute(
+        select(
+            User.full_name,
+            func.count(ScheduleEvent.id).label("lessons"),
+            func.coalesce(func.sum(
+                func.extract('epoch', ScheduleEvent.end_time - ScheduleEvent.start_time)
+                / 3600.0 * Offering.base_price_per_hour
+            ), 0).label("revenue"),
         )
-    ).scalar_one()
-    pending_proposals = (
-        await db.execute(
-            select(func.count(RescheduleProposal.id)).where(
-                RescheduleProposal.status == ProposalStatus.PENDING
-            )
+        .join(ScheduleEvent, ScheduleEvent.teacher_id == User.id)
+        .join(Offering, ScheduleEvent.offering_id == Offering.id)
+        .where(
+            User.role == UserRole.TEACHER,
+            ScheduleEvent.start_time >= cur_start,
+            ScheduleEvent.start_time < cur_end,
+            ScheduleEvent.status != EventStatus.CANCELLED,
         )
-    ).scalar_one()
+        .group_by(User.id, User.full_name)
+        .order_by(func.count(ScheduleEvent.id).desc())
+    )).all()
+
     return {
+        # legacy fields kept for backwards compat
         "total_events": total_events,
         "scheduled": scheduled,
-        "completed": completed,
+        "completed": completed_total,
         "cancelled": cancelled,
         "total_offerings": total_offerings,
         "total_teachers": total_teachers,
         "pending_proposals": pending_proposals,
+        # new fields
+        "total_students": total_students,
+        "lessons_this_week": lessons_this_week,
+        "lessons_this_month": lessons_this_month,
+        "lessons_last_month": lessons_last_month,
+        "revenue_this_month": round(revenue_this_month, 2),
+        "revenue_last_month": round(revenue_last_month, 2),
+        "revenue_6mo_avg": round(avg_6mo, 2),
+        "revenue_by_month": revenue_by_month,
+        "teacher_stats": [
+            {"name": r.full_name, "lessons": r.lessons, "revenue": round(float(r.revenue), 2)}
+            for r in teacher_rows
+        ],
     }
 
 
