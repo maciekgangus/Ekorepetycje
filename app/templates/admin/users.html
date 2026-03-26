@@ -136,7 +136,12 @@
                             <form class="flex-1 space-y-3"
                                   hx-patch="/api/admin/teachers/{{ user.id }}/profile"
                                   hx-swap="none"
-                                  hx-on::after-request="document.getElementById('admin-saved-{{ user.id }}').classList.remove('hidden');setTimeout(()=>document.getElementById('admin-saved-{{ user.id }}').classList.add('hidden'),2000)">
+                                  hx-on::after-request="
+                                    var saved=document.getElementById('admin-saved-{{ user.id }}');
+                                    var row=document.getElementById('profile-{{ user.id }}');
+                                    saved.classList.remove('hidden');
+                                    setTimeout(function(){saved.classList.add('hidden');row.classList.add('hidden');},1500)
+                                  ">
                                 <div>
                                     <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Bio</label>
                                     <textarea name="bio" rows="3" maxlength="500"

@@ -11,9 +11,9 @@
     <meta name="csrf-token" content="{{ csrf_token(request) }}">
     {% block extra_head %}{% endblock %}
 </head>
-<body {% block body_attrs %}class="bg-gray-950 text-gray-100 font-inter antialiased min-h-screen"{% endblock %}>
+<body {% block body_attrs %}class="bg-gray-950 text-gray-100 font-inter antialiased min-h-screen flex flex-col"{% endblock %}>
     {% block navbar %}{% include "components/navbar.html" %}{% endblock %}
-    <main>
+    <main class="flex-1">
         {% block content %}{% endblock %}
     </main>
     {% block footer %}{% include "components/footer.html" %}{% endblock %}

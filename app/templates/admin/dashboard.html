@@ -143,13 +143,24 @@
             </button>
         </div>
 
+        <!-- New offering form -->
         <div id="new-offering-form" class="hidden mb-6 p-4 bg-gray-800/50 rounded-xl border border-gray-700/50">
             <h3 class="text-sm font-medium text-gray-300 mb-4">Nowa oferta</h3>
             <form hx-post="/admin/offerings/create"
-                  hx-target="#offerings-list"
+                  hx-target="#offerings-grouped"
                   hx-swap="outerHTML"
-                  hx-on::after-request="if(event.detail.successful) document.getElementById('new-offering-form').classList.add('hidden')"
+                  hx-on::after-request="if(event.detail.successful){document.getElementById('new-offering-form').classList.add('hidden');document.getElementById('teacher-filter').value='all';}"
                   class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nauczyciel</label>
+                    <select name="teacher_id" required
+                            class="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500/50">
+                        <option value="" disabled selected>Wybierz nauczyciela…</option>
+                        {% for t in teachers %}
+                        <option value="{{ t.id }}">{{ t.full_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">Tytuł</label>
                     <input type="text" name="title" required
@@ -161,12 +172,6 @@
                     <input type="number" name="base_price_per_hour" required min="1" step="0.01"
                            class="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
                            placeholder="80">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-400 mb-1">ID Nauczyciela (UUID)</label>
-                    <input type="text" name="teacher_id" required
-                           class="w-full bg-gray-700/50 border border-gray-600/50 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500/50"
-                           placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                 </div>
                 <div>
                     <label class="block text-xs text-gray-400 mb-1">Opis (opcjonalny)</label>
@@ -186,7 +191,24 @@
             </form>
         </div>
 
-        {% include "components/offerings_list.html" %}
+        <!-- Teacher filter -->
+        <div class="mb-4 flex items-center gap-3">
+            <label class="text-xs text-gray-500 uppercase tracking-wide whitespace-nowrap">Filtruj nauczyciela</label>
+            <select id="teacher-filter"
+                    hx-get="/admin/offerings/fragment"
+                    hx-target="#offerings-grouped"
+                    hx-swap="outerHTML"
+                    hx-trigger="change"
+                    name="teacher_id"
+                    class="bg-gray-800 border border-gray-700/50 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none focus:border-green-500/50 max-w-xs">
+                <option value="all">Wszyscy nauczyciele</option>
+                {% for t in teachers %}
+                <option value="{{ t.id }}">{{ t.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% include "components/offerings_grouped.html" %}
     </div>
 </div>
 {% endblock %}

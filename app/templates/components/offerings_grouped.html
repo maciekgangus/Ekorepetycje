@@ -1,0 +1,44 @@
+<div id="offerings-grouped">
+{% set has_any = namespace(value=false) %}
+{% for teacher in teachers %}{% if teacher.offerings %}{% set has_any.value = true %}{% endif %}{% endfor %}
+
+{% if not has_any.value %}
+    <p class="text-sm text-gray-500 text-center py-8">Brak ofert. Dodaj pierwszą ofertę powyżej.</p>
+{% else %}
+    {% for teacher in teachers %}
+    {% if teacher.offerings %}
+    <div class="mb-6 last:mb-0">
+        <!-- Teacher header -->
+        <div class="flex items-center gap-3 mb-3 px-1">
+            {% if teacher.photo_url %}
+            <img src="{{ teacher.photo_url }}" alt="{{ teacher.full_name }}"
+                 class="w-7 h-7 rounded-full object-cover flex-shrink-0">
+            {% else %}
+            <div class="w-7 h-7 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                <span class="text-green-400 text-[11px] font-semibold">
+                    {{ teacher.full_name.split()[0][0]|upper }}{{ teacher.full_name.split()[-1][0]|upper if teacher.full_name.split()|length > 1 else '' }}
+                </span>
+            </div>
+            {% endif %}
+            <span class="text-sm font-semibold text-gray-200">{{ teacher.full_name }}</span>
+            <span class="text-xs text-gray-600 ml-auto">{{ teacher.offerings|length }} ofert{% if teacher.offerings|length == 1 %}a{% elif teacher.offerings|length in [2,3,4] %}y{% else %}{% endif %}</span>
+        </div>
+        <!-- Offerings rows -->
+        <div class="space-y-2">
+            {% for offering in teacher.offerings %}
+            <div class="flex items-center justify-between px-4 py-3 bg-gray-800/30 rounded-xl border border-gray-700/30 hover:border-gray-600/40 transition-colors">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-white truncate">{{ offering.title }}</p>
+                    {% if offering.description %}
+                    <p class="text-xs text-gray-500 mt-0.5 truncate">{{ offering.description }}</p>
+                    {% endif %}
+                </div>
+                <span class="text-sm font-semibold text-green-400 whitespace-nowrap ml-4">{{ offering.base_price_per_hour }} zł/h</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+{% endif %}
+</div>

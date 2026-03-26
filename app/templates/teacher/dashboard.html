@@ -97,7 +97,15 @@
             <form class="flex-1 space-y-4"
                   hx-patch="/api/teachers/me/profile"
                   hx-swap="none"
-                  hx-on::after-request="document.getElementById('profile-saved').classList.remove('hidden');setTimeout(()=>document.getElementById('profile-saved').classList.add('hidden'),2000)">
+                  hx-on::after-request="
+                    var btn=this.querySelector('button[type=submit]');
+                    var orig=btn.textContent;
+                    btn.textContent='Zapisano ✓';
+                    btn.classList.remove('bg-green-500','hover:bg-green-400');
+                    btn.classList.add('bg-green-700');
+                    btn.disabled=true;
+                    setTimeout(function(){btn.textContent=orig;btn.classList.add('bg-green-500','hover:bg-green-400');btn.classList.remove('bg-green-700');btn.disabled=false;},2000)
+                  ">
                 <div>
                     <label class="block text-xs text-gray-400 mb-1 uppercase tracking-wide">Bio</label>
                     <textarea name="bio" maxlength="500" rows="4"
@@ -117,7 +125,6 @@
                             class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
                         Zapisz
                     </button>
-                    <span id="profile-saved" class="hidden text-xs text-green-400">Zapisano ✓</span>
                 </div>
             </form>
         </div>

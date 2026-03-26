@@ -3,7 +3,7 @@
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -35,12 +35,39 @@ async def admin_dashboard(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
 ) -> HTMLResponse:
-    result = await db.execute(select(Offering))
-    offerings = result.scalars().all()
+    teachers = (await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .options(selectinload(User.offerings))
+        .order_by(User.full_name)
+    )).scalars().all()
     pending = await _pending_count(db)
     return templates.TemplateResponse(
         request, "admin/dashboard.html",
-        {"offerings": offerings, "pending_proposals": pending},
+        {"teachers": teachers, "pending_proposals": pending},
+    )
+
+
+@router.get("/offerings/fragment", response_class=HTMLResponse)
+async def offerings_fragment(
+    request: Request,
+    teacher_id: str = Query("all"),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> HTMLResponse:
+    q = (select(User)
+         .where(User.role == UserRole.TEACHER)
+         .options(selectinload(User.offerings))
+         .order_by(User.full_name))
+    if teacher_id != "all":
+        try:
+            q = q.where(User.id == UUID(teacher_id))
+        except ValueError:
+            pass
+    teachers = (await db.execute(q)).scalars().all()
+    return templates.TemplateResponse(
+        request, "components/offerings_grouped.html",
+        {"teachers": teachers},
     )
 
 
@@ -252,8 +279,13 @@ async def create_offering_htmx(
     )
     db.add(offering)
     await db.flush()
-    result = await db.execute(select(Offering))
+    teachers = (await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .options(selectinload(User.offerings))
+        .order_by(User.full_name)
+    )).scalars().all()
     return templates.TemplateResponse(
-        request, "components/offerings_list.html",
-        {"offerings": result.scalars().all()},
+        request, "components/offerings_grouped.html",
+        {"teachers": teachers},
     )
