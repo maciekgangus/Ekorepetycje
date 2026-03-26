@@ -5,6 +5,8 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api import routes_landing, routes_api, routes_admin
 from app.api import routes_auth, routes_profile, routes_teacher, routes_student
@@ -13,12 +15,19 @@ from app.core.config import settings
 from app.core.templates import templates
 
 # ---------------------------------------------------------------------------
+# Rate limiter — shared instance, also imported by routes_auth
+# ---------------------------------------------------------------------------
+from app.core.limiter import limiter
+
+# ---------------------------------------------------------------------------
 # Application factory
 # ---------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="Ekorepetycje", debug=settings.DEBUG)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR), check_dir=False), name="static")
 

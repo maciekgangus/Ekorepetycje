@@ -12,6 +12,8 @@ from app.core.security import verify_password
 from app.core.templates import templates
 from app.models.users import User, UserRole
 
+from app.core.limiter import limiter
+
 router = APIRouter(tags=["auth"])
 
 _ROLE_REDIRECT = {
@@ -33,6 +35,7 @@ async def login_page(
 
 
 @router.post("/login", response_class=HTMLResponse)
+@limiter.limit("5/minute")
 async def login_submit(
     request: Request,
     email: str = Form(...),
