@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_db
 from app.core.auth import require_admin
+from app.core.csrf import require_csrf
 from app.core.security import hash_password
 from app.core.templates import templates
 from app.models.offerings import Offering
@@ -85,6 +86,7 @@ async def create_user(
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     if existing:
@@ -117,6 +119,7 @@ async def update_user_role(
     role: str = Form(...),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -136,6 +139,7 @@ async def reset_user_password(
     password: str = Form(...),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -174,6 +178,7 @@ async def approve_proposal(
     proposal_id: UUID,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     # NOTE: send_proposal_outcome_email is defined in Task 12 (email.py stubs).
     from app.services.email import send_proposal_outcome_email
@@ -204,6 +209,7 @@ async def reject_proposal(
     proposal_id: UUID,
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     from app.services.email import send_proposal_outcome_email
     result = await db.execute(
@@ -229,6 +235,7 @@ async def create_offering_htmx(
     teacher_id: str = Form(...),
     db: AsyncSession = Depends(get_db),
     _: User = Depends(require_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     try:
         price = Decimal(base_price_per_hour)

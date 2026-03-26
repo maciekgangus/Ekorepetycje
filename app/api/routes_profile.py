@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db
 from app.core.auth import require_auth
+from app.core.csrf import require_csrf
 from app.core.security import hash_password, verify_password
 from app.core.templates import templates
 from app.models.users import User
@@ -31,6 +32,7 @@ async def change_password(
     new_password: str = Form(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_auth),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     if not verify_password(old_password, current_user.hashed_password):
         return templates.TemplateResponse(

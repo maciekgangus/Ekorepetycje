@@ -14,6 +14,7 @@ from sqlalchemy import select, func
 
 from app.api.dependencies import get_db
 from app.core.auth import get_current_user, require_teacher_or_admin
+from app.core.csrf import require_csrf
 from app.models.availability import UnavailableBlock
 from app.models.proposals import RescheduleProposal, ProposalStatus
 from app.models.scheduling import ScheduleEvent, EventStatus
@@ -66,6 +67,7 @@ async def update_event(
     payload: ScheduleEventCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> ScheduleEventRead:
     """Update a single schedule event. Teachers can only update their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
@@ -86,6 +88,7 @@ async def delete_event(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> None:
     """Delete a single schedule event. Teachers can only delete their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
@@ -148,6 +151,7 @@ async def create_availability_block(
     note: str = Form(""),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Create a single unavailability block for the given user."""
     if current_user.role != UserRole.ADMIN and current_user.id != user_id:
@@ -313,6 +317,7 @@ async def create_series(
     payload: RecurringSeriesCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Create a recurring series and pre-generate all ScheduleEvent rows."""
     if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
@@ -408,6 +413,7 @@ async def delete_series_from(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> None:
     """Delete an event and all following events in the series."""
     series_result = await db.execute(
@@ -453,6 +459,7 @@ async def update_series_from(
     payload: RecurringSeriesCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Delete event and all following, re-generate from updated rule starting that ISO week."""
     series_result = await db.execute(
@@ -521,6 +528,7 @@ async def create_unavail_series(
     payload: RecurringUnavailCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Create a recurring unavailability series and pre-generate all UnavailableBlock rows."""
     if current_user.role != UserRole.ADMIN and payload.user_id != current_user.id:
@@ -577,6 +585,7 @@ async def delete_unavail_series_from(
     block_id: UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> None:
     """Delete a block and all following blocks in the unavailability series."""
     series_result = await db.execute(
@@ -620,6 +629,7 @@ async def update_unavail_series_from(
     payload: RecurringUnavailCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Delete block and all following, re-generate from updated rule starting that ISO week."""
     series_result = await db.execute(
@@ -684,6 +694,7 @@ async def upload_own_photo(
     file: UploadFile = File(...),
     current_user: User = Depends(require_teacher_or_admin),
     db: AsyncSession = Depends(get_db),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     """Teacher uploads their own profile photo. Returns an HTML <img> fragment."""
     return await _save_teacher_photo(file, current_user, db)
@@ -695,6 +706,7 @@ async def admin_upload_teacher_photo(
     file: UploadFile = File(...),
     current_user: User = Depends(require_teacher_or_admin),
     db: AsyncSession = Depends(get_db),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     """Admin uploads a photo for any teacher."""
     if current_user.role != UserRole.ADMIN:
@@ -751,6 +763,7 @@ async def update_own_profile(
     specialties: str = Form(default=""),
     current_user: User = Depends(require_teacher_or_admin),
     db: AsyncSession = Depends(get_db),
+    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Teacher updates their own bio and specialties."""
     current_user.bio = bio.strip() or None

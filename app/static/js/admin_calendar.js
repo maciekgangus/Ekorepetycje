@@ -2,6 +2,17 @@
  * FullCalendar initialization for the Ekorepetycje admin panel.
  */
 
+/** Escape HTML special chars — prevents XSS when injecting user data into innerHTML. */
+function _h(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Read CSRF token from <meta name="csrf-token"> (injected by base.html). */
+function _csrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 // ─── Teacher colour palette ────────────────────────────────────────────────────
 // 5 vivid colours that work on a dark background, one per teacher slot.
 const _TEACHER_PALETTE = [
@@ -181,7 +192,7 @@ async function _patchEvent(event) {
     try {
         const resp = await fetch(`/api/events/${event.id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
             body: JSON.stringify({
                 title: event.title,
                 start_time: event.start.toISOString(),
@@ -208,7 +219,7 @@ const _STATUS_PL = { scheduled: 'Zaplanowane', completed: 'Ukończone', cancelle
 async function _changeStatus(event, newStatus) {
     const r = await fetch(`/api/events/${event.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
         body: JSON.stringify({
             title: event.title,
             start_time: event.start.toISOString(),
@@ -241,10 +252,10 @@ function _showTooltip(event, jsEvent) {
     const statusLabel = _STATUS_PL[event.extendedProps.status] || event.extendedProps.status;
     tip.innerHTML = `
         <div style="background:rgba(10,15,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.4);padding:10px 13px;">
-            <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${event.title}</p>
+            <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${_h(event.title)}</p>
             <p style="font-size:11px;color:#64748b;margin:0;display:flex;align-items:center;gap:5px">
                 <span style="width:6px;height:6px;border-radius:50%;background:${col.bg};flex-shrink:0;display:inline-block"></span>
-                ${statusLabel}
+                ${_h(statusLabel)}
             </p>
             ${event.extendedProps.series_id ? '<p style="font-size:11px;color:#38bdf8;margin:4px 0 0">↻ Zajęcia cykliczne</p>' : ''}
             <p style="font-size:10px;color:#334155;margin:5px 0 0">Kliknij aby edytować</p>
@@ -361,18 +372,18 @@ function _showContextMenu(event, jsEvent) {
     if (seriesId) {
         _addMenuItem(menu, _ICO_DEL, 'Usuń tę lekcję', true, async () => {
             if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok) event.remove();
         });
         _addMenuItem(menu, _ICO_DEL, 'Usuń tę i następne', true, async () => {
             if (!confirm(`Usuń tę i wszystkie następne lekcje z serii "${event.title}"?`)) return;
-            const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok && window._calendar) window._calendar.refetchEvents();
         });
     } else {
         _addMenuItem(menu, _ICO_DEL, 'Usuń', true, async () => {
             if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok) event.remove();
         });
     }
@@ -514,7 +525,7 @@ function _editSingleEvent(event) {
         if (!newTitle) { input.style.borderColor = '#ef4444'; input.focus(); return; }
         const r = await fetch(`/api/events/${event.id}`, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
             body: JSON.stringify({
                 title: newTitle,
                 start_time: event.start.toISOString(),
