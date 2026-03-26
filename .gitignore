@@ -56,3 +56,4 @@ docs/
 *.local.md
 implementation_plan.md
 CLAUDE.local.md
+DEPLOY_DEMO.md
