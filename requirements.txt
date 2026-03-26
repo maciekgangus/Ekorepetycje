@@ -19,3 +19,4 @@ resend
 pytest
 pytest-asyncio
 anyio[trio]
+boto3
