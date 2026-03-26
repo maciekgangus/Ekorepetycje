@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.api.dependencies import get_db
 from app.core.auth import SESSION_COOKIE, get_current_user, sign_session
+from app.core.csrf import require_csrf
 from app.core.security import verify_password
 from app.core.templates import templates
 from app.models.users import User, UserRole
@@ -62,7 +63,7 @@ async def login_submit(
 
 
 @router.post("/logout")
-async def logout() -> RedirectResponse:
+async def logout(_csrf: None = Depends(require_csrf)) -> RedirectResponse:
     """Clear session cookie and redirect to login."""
     response = RedirectResponse("/login", status_code=303)
     response.delete_cookie(SESSION_COOKIE)

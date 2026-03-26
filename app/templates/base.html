@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="csrf-token" content="{{ csrf_token(request) }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body {% block body_attrs %}class="bg-gray-950 text-gray-100 font-inter antialiased min-h-screen"{% endblock %}>
@@ -17,6 +18,13 @@
     </main>
     {% block footer %}{% include "components/footer.html" %}{% endblock %}
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script>
+        // Attach CSRF token to every HTMX request automatically
+        document.body.addEventListener('htmx:configRequest', function (evt) {
+            const token = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (token) evt.detail.headers['X-CSRF-Token'] = token;
+        });
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

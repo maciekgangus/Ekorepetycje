@@ -2,6 +2,18 @@
  * FullCalendar initialization for the teacher calendar view.
  * window.TEACHER_ID is injected from the template.
  */
+
+/** Escape HTML special chars — prevents XSS when injecting user data into innerHTML. */
+function _h(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Read CSRF token from <meta name="csrf-token"> (injected by base.html). */
+function _csrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
@@ -142,10 +154,10 @@ function _showTeacherTooltip(event, jsEvent) {
     const statusLabel = _T_STATUS_PL[event.extendedProps.status] || event.extendedProps.status;
     tip.innerHTML = `
         <div style="background:rgba(10,15,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.4);padding:10px 13px;">
-            <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${event.title}</p>
+            <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${_h(event.title)}</p>
             <p style="font-size:11px;color:#64748b;margin:0;display:flex;align-items:center;gap:5px">
                 <span style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
-                ${statusLabel}
+                ${_h(statusLabel)}
             </p>
             ${event.extendedProps.series_id ? '<p style="font-size:11px;color:#38bdf8;margin:4px 0 0">↻ Zajęcia cykliczne</p>' : ''}
         </div>`;
@@ -233,18 +245,18 @@ function _showTeacherContextMenu(event, jsEvent) {
         menu.appendChild(div);
         _addItem(_T_ICO_DEL, 'Usuń tę lekcję', true, async () => {
             if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok) event.remove();
         });
         _addItem(_T_ICO_DEL, 'Usuń tę i następne', true, async () => {
             if (!confirm('Usuń tę i wszystkie następne lekcje z serii?')) return;
-            const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/series/${seriesId}/from/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok && window._calendar) window._calendar.refetchEvents();
         });
     } else {
         _addItem(_T_ICO_DEL, 'Usuń lekcję', true, async () => {
             if (!confirm(`Usuń lekcję "${event.title}"?`)) return;
-            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE' });
+            const r = await fetch(`/api/events/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
             if (r.ok) event.remove();
         });
     }

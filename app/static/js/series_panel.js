@@ -14,6 +14,17 @@ let _offerings = [];
 let _teachers = [];
 let _students = [];
 
+/** Escape HTML special chars — prevents XSS when injecting user data into innerHTML. */
+function _h(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Read CSRF token from <meta name="csrf-token"> (injected by base.html). */
+function _csrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 // ─── Panel open/close ──────────────────────────────────────────────────────
 
 function openSeriesPanel() {
@@ -103,7 +114,7 @@ async function _spInitDropdowns(prefill = null) {
         }
         const sel = document.getElementById('sp-teacher');
         sel.innerHTML = '<option value="">Wybierz nauczyciela...</option>' +
-            _teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+            _teachers.map(t => `<option value="${_h(t.id)}">${_h(t.full_name)}</option>`).join('');
         if (prefill) sel.value = prefill.teacher_id;
     }
 
@@ -114,7 +125,7 @@ async function _spInitDropdowns(prefill = null) {
     }
     const stuSel = document.getElementById('sp-student');
     stuSel.innerHTML = '<option value="">Brak / przypisz później</option>' +
-        _students.map(s => `<option value="${s.id}">${s.full_name}</option>`).join('');
+        _students.map(s => `<option value="${_h(s.id)}">${_h(s.full_name)}</option>`).join('');
     if (prefill && prefill.student_id) stuSel.value = prefill.student_id;
 
     // Offerings
@@ -124,7 +135,7 @@ async function _spInitDropdowns(prefill = null) {
     }
     const offSel = document.getElementById('sp-offering');
     offSel.innerHTML = '<option value="">Wybierz ofertę...</option>' +
-        _offerings.map(o => `<option value="${o.id}">${o.title}</option>`).join('');
+        _offerings.map(o => `<option value="${_h(o.id)}">${_h(o.title)}</option>`).join('');
     if (prefill) {
         offSel.value = prefill.offering_id;
         document.getElementById('sp-title').value = prefill.title;
@@ -314,7 +325,7 @@ async function spSubmit() {
     try {
         const resp = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
             body: JSON.stringify(payload),
         });
 

@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_db
 from app.core.auth import require_teacher_or_admin
+from app.core.csrf import require_csrf
 from app.core.templates import templates
 from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.proposals import RescheduleProposal, ProposalStatus
@@ -83,6 +84,7 @@ async def create_proposal(
     new_end: str = Form(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
+    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     # Ownership check: teacher can only propose reschedule for their own events.
     event_result = await db.execute(

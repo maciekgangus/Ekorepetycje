@@ -2,6 +2,18 @@
  * FullCalendar initialization for the student calendar view.
  * window.USER_ID is injected from the template.
  */
+
+/** Escape HTML special chars — prevents XSS when injecting user data into innerHTML. */
+function _h(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** Read CSRF token from <meta name="csrf-token"> (injected by base.html). */
+function _csrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
@@ -133,10 +145,10 @@ function _showStudentTooltip(event, jsEvent) {
     const statusPl = { scheduled: 'Zaplanowane', completed: 'Ukończone', cancelled: 'Odwołane' };
     const dotColor = status === 'completed' ? '#6b7280' : status === 'cancelled' ? '#ef4444' : '#22c55e';
     tip.innerHTML = `
-        <p class="font-semibold text-white mb-1 leading-tight">${event.title}</p>
+        <p class="font-semibold text-white mb-1 leading-tight">${_h(event.title)}</p>
         ${status ? `<p class="text-xs text-gray-400 flex items-center gap-1.5">
             <span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0"></span>
-            ${statusPl[status] || status}</p>` : ''}
+            ${_h(statusPl[status] || status)}</p>` : ''}
         ${event.extendedProps?.series_id ? '<p class="text-xs text-green-400 mt-1">↻ Zajęcia cykliczne</p>' : ''}
     `;
     tip.style.display = 'block';
@@ -174,7 +186,7 @@ function _showUnavailContextMenu(event, jsEvent) {
             action: async () => {
                 if (!confirm('Usuń ten blok niedostępności?')) return;
                 // One-off delete — use block id from event.id
-                const resp = await fetch(`/api/availability/${event.id}`, { method: 'DELETE' });
+                const resp = await fetch(`/api/availability/${event.id}`, { method: 'DELETE', headers: { 'X-CSRF-Token': _csrf() } });
                 if (resp.ok && window._calendar) window._calendar.refetchEvents();
             },
         },

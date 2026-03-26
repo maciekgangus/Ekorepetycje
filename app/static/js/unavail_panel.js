@@ -8,6 +8,11 @@
 const UP_DAY_NAMES = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nd'];
 let _upIntervalWeeks = 1;
 
+/** Read CSRF token from <meta name="csrf-token"> (injected by base.html). */
+function _upCsrf() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || '';
+}
+
 // ─── Panel open/close ────────────────────────────────────────────────────────
 
 function openUnavailPanel() {
@@ -216,7 +221,7 @@ async function upSubmit() {
     try {
         const resp = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _upCsrf() },
             body: JSON.stringify(payload),
         });
 
