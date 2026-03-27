@@ -24,6 +24,40 @@ services:
     profiles:
       - dev
 
+  # ── Ollama — local LLM for dev (CPU-only, no GPU needed) ──────────────────
+  # Start with:  docker compose --profile dev up
+  # Model size:  llama3.2:3b ≈ 2 GB RAM  |  llama3.1:8b ≈ 5 GB RAM
+  # First run pulls the model automatically; subsequent runs use the volume cache.
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    profiles:
+      - dev
+
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ollama
+    command: pull llama3.2:3b
+    restart: "no"
+    profiles:
+      - dev
+
   web:
     build: .
     ports:
@@ -44,3 +78,4 @@ services:
 
 volumes:
   postgres_data:
+  ollama_data:

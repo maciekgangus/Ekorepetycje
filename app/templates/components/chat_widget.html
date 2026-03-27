@@ -1,0 +1,247 @@
+<!-- ─── Floating AI Chat Widget ──────────────────────────────────────────── -->
+<div id="chat-widget" class="fixed bottom-6 right-5 sm:right-6 z-50 flex flex-col items-end gap-3">
+
+    <!-- Chat panel -->
+    <div id="chat-panel"
+         role="dialog" aria-label="Asystent Ekorepetycje" aria-modal="true"
+         class="chat-panel w-[calc(100vw-2.5rem)] sm:w-[370px] bg-cream border border-ink/15 shadow-2xl flex flex-col"
+         style="height:520px;max-height:calc(100dvh - 6rem);border-radius:16px;overflow:hidden;">
+
+        <!-- Header -->
+        <div class="bg-navy px-5 py-4 flex items-center justify-between flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
+                </span>
+                <span class="text-cream font-medium text-sm tracking-wide">Asystent Ekorepetycje</span>
+            </div>
+            <button id="chat-close"
+                    class="text-cream/50 hover:text-cream transition-colors -mr-1 p-1"
+                    aria-label="Zamknij czat">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 scroll-smooth">
+            <!-- Initial greeting bubble -->
+            <div class="flex items-end gap-2">
+                <div class="w-7 h-7 bg-navy rounded-full flex-shrink-0 flex items-center justify-center mb-0.5">
+                    <span class="text-cream text-[11px] font-serif font-bold">E</span>
+                </div>
+                <div class="chat-bubble-bot">
+                    <p>Cześć! Jestem asystentem platformy Ekorepetycje. Mogę odpowiedzieć na pytania o lekcje, przedmioty, rezerwacje i cennik. Jak mogę pomóc? 😊</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input bar -->
+        <div class="flex-shrink-0 border-t border-ink/10 px-3 py-3 bg-cream">
+            <form id="chat-form" class="flex items-center gap-2" autocomplete="off">
+                <input id="chat-input" type="text"
+                       placeholder="Napisz wiadomość…"
+                       maxlength="500"
+                       class="flex-1 bg-ink/[0.04] border border-ink/10 rounded-full px-4 py-2.5 text-sm text-ink placeholder-ink/30
+                              focus:outline-none focus:border-ink/25 focus:bg-ink/[0.06] transition-colors">
+                <button id="chat-send" type="submit"
+                        class="w-9 h-9 bg-navy hover:bg-navy/85 disabled:opacity-40 text-cream flex items-center justify-center
+                               flex-shrink-0 rounded-full transition-colors"
+                        aria-label="Wyślij">
+                    <svg class="w-4 h-4 translate-x-px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toggle FAB -->
+    <button id="chat-toggle"
+            class="w-14 h-14 bg-navy hover:bg-navy/85 text-cream flex items-center justify-center
+                   rounded-full shadow-lg shadow-navy/30 transition-all hover:scale-105 active:scale-95"
+            aria-label="Otwórz asystenta" aria-expanded="false" aria-controls="chat-panel">
+        <!-- Chat icon (visible when closed) -->
+        <svg id="chat-icon-chat" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0
+                     01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        <!-- X icon (visible when open) -->
+        <svg id="chat-icon-x" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+(function () {
+    var toggle   = document.getElementById('chat-toggle');
+    var panel    = document.getElementById('chat-panel');
+    var closeBtn = document.getElementById('chat-close');
+    var form     = document.getElementById('chat-form');
+    var input    = document.getElementById('chat-input');
+    var sendBtn  = document.getElementById('chat-send');
+    var msgList  = document.getElementById('chat-messages');
+    var iconChat = document.getElementById('chat-icon-chat');
+    var iconX    = document.getElementById('chat-icon-x');
+
+    var history  = [];   // [{role, content}]
+    var isOpen   = false;
+
+    // ── Open / close ─────────────────────────────────────────────────────────
+    function openPanel() {
+        panel.classList.add('is-open');
+        toggle.setAttribute('aria-expanded', 'true');
+        iconChat.classList.add('hidden');
+        iconX.classList.remove('hidden');
+        isOpen = true;
+        setTimeout(function () { input.focus(); }, 50);
+    }
+
+    function closePanel() {
+        panel.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+        iconChat.classList.remove('hidden');
+        iconX.classList.add('hidden');
+        isOpen = false;
+    }
+
+    toggle.addEventListener('click', function () { isOpen ? closePanel() : openPanel(); });
+    closeBtn.addEventListener('click', closePanel);
+
+    // Close on Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && isOpen) closePanel();
+    });
+
+    // ── Message rendering ─────────────────────────────────────────────────────
+    function addUserBubble(text) {
+        var div = document.createElement('div');
+        div.className = 'flex items-end justify-end gap-2';
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-bubble-user';
+        bubble.textContent = text;
+        div.appendChild(bubble);
+        msgList.appendChild(div);
+        scrollDown();
+    }
+
+    function addBotBubble(text) {
+        var div = document.createElement('div');
+        div.className = 'flex items-end gap-2';
+        var avatar = document.createElement('div');
+        avatar.className = 'w-7 h-7 bg-navy rounded-full flex-shrink-0 flex items-center justify-center mb-0.5';
+        avatar.innerHTML = '<span class="text-cream text-[11px] font-serif font-bold">E</span>';
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-bubble-bot';
+        bubble.textContent = text;
+        div.appendChild(avatar);
+        div.appendChild(bubble);
+        msgList.appendChild(div);
+        scrollDown();
+        return bubble;
+    }
+
+    function addTypingIndicator() {
+        var div = document.createElement('div');
+        div.className = 'flex items-end gap-2';
+        div.id = 'chat-typing';
+        div.innerHTML =
+            '<div class="w-7 h-7 bg-navy rounded-full flex-shrink-0 flex items-center justify-center mb-0.5">' +
+                '<span class="text-cream text-[11px] font-serif font-bold">E</span>' +
+            '</div>' +
+            '<div class="chat-bubble-bot py-3 px-4">' +
+                '<div class="flex gap-1 items-center h-4">' +
+                    '<span class="chat-dot" style="animation-delay:0s"></span>' +
+                    '<span class="chat-dot" style="animation-delay:.18s"></span>' +
+                    '<span class="chat-dot" style="animation-delay:.36s"></span>' +
+                '</div>' +
+            '</div>';
+        msgList.appendChild(div);
+        scrollDown();
+    }
+
+    function removeTyping() {
+        var t = document.getElementById('chat-typing');
+        if (t) t.remove();
+    }
+
+    function scrollDown() {
+        msgList.scrollTop = msgList.scrollHeight;
+    }
+
+    // ── Send message ──────────────────────────────────────────────────────────
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var text = input.value.trim();
+        if (!text || sendBtn.disabled) return;
+
+        input.value = '';
+        input.disabled = true;
+        sendBtn.disabled = true;
+
+        addUserBubble(text);
+        history.push({ role: 'user', content: text });
+        addTypingIndicator();
+
+        fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+            },
+            body: JSON.stringify({ messages: history }),
+        })
+        .then(function (resp) {
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+            removeTyping();
+            var bubble   = addBotBubble('');
+            var fullText = '';
+            var reader   = resp.body.getReader();
+            var decoder  = new TextDecoder();
+            var buf      = '';
+
+            function pump() {
+                return reader.read().then(function (r) {
+                    if (r.done) return;
+                    buf += decoder.decode(r.value, { stream: true });
+                    var lines = buf.split('\n');
+                    buf = lines.pop();
+                    lines.forEach(function (line) {
+                        if (!line.startsWith('data: ')) return;
+                        var payload = line.slice(6);
+                        if (payload === '[DONE]') return;
+                        try {
+                            var data = JSON.parse(payload);
+                            if (data.text) {
+                                fullText += data.text;
+                                bubble.textContent = fullText;
+                                scrollDown();
+                            }
+                        } catch (_) {}
+                    });
+                    return pump();
+                });
+            }
+
+            return pump().then(function () {
+                if (fullText) history.push({ role: 'assistant', content: fullText });
+            });
+        })
+        .catch(function () {
+            removeTyping();
+            addBotBubble('Przepraszam, coś poszło nie tak. Sprawdź połączenie i spróbuj ponownie.');
+        })
+        .finally(function () {
+            input.disabled = false;
+            sendBtn.disabled = false;
+            if (isOpen) input.focus();
+        });
+    });
+})();
+</script>
