@@ -544,6 +544,10 @@ video {
   --tw-backdrop-sepia:  ;
 }
 
+.visible {
+  visibility: visible;
+}
+
 .fixed {
   position: fixed;
 }
@@ -2319,11 +2323,13 @@ video {
 .hero-anim {
   opacity: 0;
   animation: heroFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
 }
 
 .hero-anim-r {
   opacity: 0;
   animation: heroFadeRight 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: transform, opacity;
 }
 
 /* ─── Scroll-reveal (triggered by IntersectionObserver via .is-visible) ── */
@@ -2366,6 +2372,7 @@ video {
 
 [data-animate] {
   opacity: 0;
+  will-change: transform, opacity;
 }
 
 [data-animate].is-visible {

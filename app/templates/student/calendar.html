@@ -11,6 +11,7 @@
             <a href="/student/" class="text-sm text-gray-400 hover:text-white transition-colors">Moje zajęcia</a>
             <span class="text-sm text-gray-500">{{ user.full_name }}</span>
             <form method="post" action="/logout" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                 <button class="text-sm text-gray-400 hover:text-white transition-colors">Wyloguj</button>
             </form>
         </div>

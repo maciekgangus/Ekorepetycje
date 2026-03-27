@@ -557,6 +557,15 @@
 <script>
     // Scroll-reveal via IntersectionObserver
     (function() {
+        // Safety net: if IntersectionObserver isn't supported or reduced-motion
+        // is on, make everything visible immediately.
+        if (!window.IntersectionObserver || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            document.querySelectorAll('[data-animate]').forEach(function(el) {
+                el.style.opacity = '1';
+            });
+            return;
+        }
+
         var observer = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
@@ -567,7 +576,7 @@
                     observer.unobserve(el);
                 }
             });
-        }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+        }, { threshold: 0.08, rootMargin: '0px 0px -16px 0px' });
 
         document.querySelectorAll('[data-animate]').forEach(function(el) {
             observer.observe(el);

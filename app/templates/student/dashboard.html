@@ -18,6 +18,7 @@
                 <a href="/student/calendar" class="text-sm text-ink/60 hover:text-ink transition-colors">Kalendarz</a>
                 <a href="/profile" class="text-sm text-ink/60 hover:text-ink transition-colors">Profil</a>
                 <form method="post" action="/logout" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                     <button class="text-sm text-ink/60 hover:text-ink transition-colors">Wyloguj</button>
                 </form>
             </div>

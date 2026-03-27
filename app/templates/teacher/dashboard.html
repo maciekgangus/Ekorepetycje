@@ -13,6 +13,7 @@
             <a href="/teacher/calendar" class="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">Kalendarz</a>
             <a href="/teacher/proposals" class="text-sm text-gray-400 hover:text-white border border-gray-700 px-4 py-2 rounded-xl transition-colors">Moje propozycje</a>
             <form method="post" action="/logout" class="inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
                 <button class="text-sm text-gray-500 hover:text-white transition-colors px-3 py-2">Wyloguj</button>
             </form>
         </div>
