@@ -62,3 +62,57 @@
     animation: none !important;
   }
 }
+
+/* ─── FAQ accordion ─────────────────────────────────────────────────────── */
+.faq-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.faq-body > div {
+  min-height: 0;
+  overflow: hidden;
+}
+.faq-item.is-open .faq-body {
+  grid-template-rows: 1fr;
+}
+
+/* Button hover — barely-there tint */
+.faq-btn {
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.faq-btn:hover {
+  background-color: rgba(26, 24, 20, 0.03);
+}
+.faq-btn:focus-visible {
+  outline: 2px solid #1a2744;
+  outline-offset: -3px;
+}
+
+/* Open-item: navy left border + very subtle bg tint */
+.faq-item {
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.faq-item.is-open {
+  border-color: rgba(26, 39, 68, 0.35);   /* navy/35 */
+  background-color: rgba(26, 39, 68, 0.025);
+}
+.faq-item.is-open .faq-btn span {
+  color: #1a2744;  /* navy */
+}
+
+/* Icon transition — slightly longer for elegance */
+.faq-icon {
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1), color 0.25s ease;
+}
+.faq-item.is-open .faq-icon {
+  color: #1a2744;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-body,
+  .faq-icon,
+  .faq-item,
+  .faq-btn { transition: none !important; }
+}
