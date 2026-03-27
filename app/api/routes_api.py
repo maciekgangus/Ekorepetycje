@@ -1,14 +1,16 @@
-"""JSON API endpoints for FullCalendar hydration and admin data."""
+"""JSON API endpoints for FullCalendar hydration, admin data, and AI chat."""
 
 import io
+import json
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from PIL import Image, UnidentifiedImageError
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
@@ -790,3 +792,43 @@ async def admin_update_teacher_profile(
     teacher.specialties = specialties.strip() or None
     await db.flush()
     return {"ok": True}
+
+
+# ─── AI Chat ──────────────────────────────────────────────────────────────────
+
+class _ChatMessage(BaseModel):
+    role: str      # "user" | "assistant"
+    content: str
+
+
+class _ChatRequest(BaseModel):
+    messages: list[_ChatMessage]
+
+
+@router.post("/chat")
+async def chat_stream(payload: _ChatRequest) -> StreamingResponse:
+    """Stream an LLM response as Server-Sent Events.
+
+    Provider is selected at runtime via LLM_PROVIDER env var:
+      ollama  (default) — local Ollama server, CPU-friendly
+      bedrock           — Amazon Bedrock, Claude Haiku (production)
+    """
+    from app.services.chat import get_chat_service
+
+    service = get_chat_service()
+    messages = [m.model_dump() for m in payload.messages]
+
+    async def event_gen():
+        try:
+            async for chunk in service.stream(messages):
+                yield f"data: {json.dumps({'text': chunk})}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'text': 'Błąd serwera. Spróbuj ponownie.'})}\n\n"
+        finally:
+            yield "data: [DONE]\n\n"
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"X-Accel-Buffering": "no", "Cache-Control": "no-cache"},
+    )
