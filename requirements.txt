@@ -20,3 +20,4 @@ pytest
 pytest-asyncio
 anyio[trio]
 boto3
+apscheduler

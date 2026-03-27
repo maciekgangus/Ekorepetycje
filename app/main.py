@@ -1,6 +1,8 @@
 """FastAPI application entry-point for Ekorepetycje."""
 
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -13,11 +15,20 @@ from app.api import routes_auth, routes_profile, routes_teacher, routes_student
 from app.core.auth import _LoginRedirect, _WrongRole, _ROLE_HOME
 from app.core.config import settings
 from app.core.templates import templates
+from app.core.limiter import limiter
+from app.core.scheduler import scheduler, setup_scheduler
 
 # ---------------------------------------------------------------------------
-# Rate limiter — shared instance, also imported by routes_auth
+# Lifespan — start/stop background scheduler
 # ---------------------------------------------------------------------------
-from app.core.limiter import limiter
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    setup_scheduler()
+    scheduler.start()
+    yield
+    scheduler.shutdown(wait=False)
+
 
 # ---------------------------------------------------------------------------
 # Application factory
@@ -25,7 +36,7 @@ from app.core.limiter import limiter
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 
-app = FastAPI(title="Ekorepetycje", debug=settings.DEBUG)
+app = FastAPI(title="Ekorepetycje", debug=settings.DEBUG, lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

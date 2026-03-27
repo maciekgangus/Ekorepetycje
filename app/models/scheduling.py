@@ -45,6 +45,9 @@ class ScheduleEvent(Base):
         default=EventStatus.SCHEDULED,
         server_default=text("'scheduled'"),
     )
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
+    )
 
     offering: Mapped["Offering"] = relationship("Offering", back_populates="events")
     teacher: Mapped["User"] = relationship("User", back_populates="taught_events", foreign_keys=[teacher_id])
