@@ -34,6 +34,11 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_GPU=0        # force CPU — GPU passthrough not needed
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
@@ -43,6 +48,8 @@ services:
     profiles:
       - dev
 
+  # Pulls the model once on first start; shares ollama's network namespace
+  # so "localhost:11434" resolves correctly without Docker DNS.
   ollama-init:
     image: ollama/ollama:latest
     depends_on:
@@ -50,8 +57,9 @@ services:
         condition: service_healthy
     volumes:
       - ollama_data:/root/.ollama
+    network_mode: "service:ollama"
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_HOST=http://localhost:11434
     entrypoint: ollama
     command: pull llama3.2:3b
     restart: "no"
