@@ -17,7 +17,7 @@
         {% block content %}{% endblock %}
     </main>
     {% block footer %}{% include "components/footer.html" %}{% endblock %}
-    {% include "components/chat_widget.html" %}
+    {% block chat_widget %}{% endblock %}
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <script>
         // Attach CSRF token to every HTMX request automatically
