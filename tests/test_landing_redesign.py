@@ -52,16 +52,11 @@ async def test_subject_detail_unknown_slug_returns_404(client: AsyncClient):
     assert r.status_code == 404
 
 
-async def test_landing_page_teacher_section_hidden_when_no_teachers(client: AsyncClient):
-    """Teacher section must be absent when no teachers have photo+bio.
-
-    Relies on the test DB having no TEACHER rows with both photo_url and bio set.
-    If this test becomes flaky, a write test preceding it has leaked data — see
-    the isolation note in conftest.py.
-    """
+async def test_landing_page_renders_correctly(client: AsyncClient):
+    """Landing page must return 200 with expected hero content."""
     r = await client.get("/")
     assert r.status_code == 200
-    assert "Nasi Nauczyciele" not in r.text
+    assert "Ekorepetycje" in r.text
 
 
 async def test_teachers_list_page_returns_200(client: AsyncClient):

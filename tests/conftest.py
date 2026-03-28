@@ -88,3 +88,99 @@ async def teacher_in_db():
             await session.delete(teacher)
             await session.commit()
     await engine.dispose()
+
+
+@pytest.fixture
+async def admin_in_db():
+    """Create an ADMIN user, yield (user_id, session_cookie_value), cleanup."""
+    import uuid as _uuid
+    from app.models.users import User, UserRole
+    from app.core.auth import sign_session
+
+    engine = _make_null_pool_engine()
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    user_id = _uuid.uuid4()
+    async with session_factory() as session:
+        session.add(User(
+            id=user_id,
+            role=UserRole.ADMIN,
+            email=f"test-admin-{user_id}@example.com",
+            hashed_password="hashed",
+            full_name="Test Admin",
+        ))
+        await session.commit()
+
+    cookie = sign_session({"user_id": str(user_id)})
+    yield user_id, cookie
+
+    async with session_factory() as session:
+        u = await session.get(User, user_id)
+        if u:
+            await session.delete(u)
+            await session.commit()
+    await engine.dispose()
+
+
+@pytest.fixture
+async def student_in_db():
+    """Create a STUDENT user, yield (user_id, session_cookie_value), cleanup."""
+    import uuid as _uuid
+    from app.models.users import User, UserRole
+    from app.core.auth import sign_session
+
+    engine = _make_null_pool_engine()
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    user_id = _uuid.uuid4()
+    async with session_factory() as session:
+        session.add(User(
+            id=user_id,
+            role=UserRole.STUDENT,
+            email=f"test-student-{user_id}@example.com",
+            hashed_password="hashed",
+            full_name="Test Student",
+        ))
+        await session.commit()
+
+    cookie = sign_session({"user_id": str(user_id)})
+    yield user_id, cookie
+
+    async with session_factory() as session:
+        u = await session.get(User, user_id)
+        if u:
+            await session.delete(u)
+            await session.commit()
+    await engine.dispose()
+
+
+@pytest.fixture
+async def teacher_in_db_with_cookie():
+    """Create a TEACHER user, yield (user_id, session_cookie_value), cleanup."""
+    import uuid as _uuid
+    from app.models.users import User, UserRole
+    from app.core.auth import sign_session
+
+    engine = _make_null_pool_engine()
+    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    user_id = _uuid.uuid4()
+    async with session_factory() as session:
+        session.add(User(
+            id=user_id,
+            role=UserRole.TEACHER,
+            email=f"test-teacher2-{user_id}@example.com",
+            hashed_password="hashed",
+            full_name="Test Teacher2",
+        ))
+        await session.commit()
+
+    cookie = sign_session({"user_id": str(user_id)})
+    yield user_id, cookie
+
+    async with session_factory() as session:
+        u = await session.get(User, user_id)
+        if u:
+            await session.delete(u)
+            await session.commit()
+    await engine.dispose()

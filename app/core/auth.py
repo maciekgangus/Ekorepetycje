@@ -75,6 +75,9 @@ class _WrongRole(Exception):
     """Raised when a logged-in user lacks the required role."""
     def __init__(self, user: "User") -> None:
         self.user = user
+        # Eagerly capture the role value so the exception handler can read
+        # it even after the SQLAlchemy session has closed (DetachedInstanceError).
+        self.role = user.role
 
 
 def require_role(*roles: UserRole):

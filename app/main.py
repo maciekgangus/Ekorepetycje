@@ -62,7 +62,7 @@ async def login_redirect_handler(request: Request, exc: _LoginRedirect) -> Redir
 @app.exception_handler(_WrongRole)
 async def wrong_role_handler(request: Request, exc: _WrongRole) -> RedirectResponse:
     # Send the user to their own dashboard instead of a 403 dead-end.
-    return RedirectResponse(_ROLE_HOME.get(exc.user.role, "/"), status_code=303)
+    return RedirectResponse(_ROLE_HOME.get(exc.role, "/"), status_code=303)
 
 
 @app.exception_handler(403)
