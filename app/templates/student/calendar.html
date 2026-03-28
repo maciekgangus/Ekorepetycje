@@ -107,6 +107,10 @@ input[type="time"], input[type="date"], input[type="datetime-local"], input[type
 
 /* ─── FullCalendar premium dark theme ─────────────────────────────────────── */
 .fc { color: #e2e8f0; }
+/* Kill the white toolbar background */
+.fc .fc-toolbar, .fc .fc-toolbar.fc-header-toolbar { background: transparent !important; }
+.fc .fc-view-harness, .fc-theme-standard .fc-scrollgrid { background: transparent !important; }
+.fc-theme-standard td, .fc-theme-standard th { background: transparent !important; }
 .fc-theme-standard .fc-scrollgrid { border-color: #1e293b; }
 .fc-theme-standard td, .fc-theme-standard th { border-color: #1e293b; }
 .fc .fc-col-header-cell-cushion { color: #64748b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; }
