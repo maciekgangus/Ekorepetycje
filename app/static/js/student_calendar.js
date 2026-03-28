@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && typeof closeUnavailPanel === 'function') closeUnavailPanel();
     });
-}
+});
 
 function _openUnavailWithTime(dateStr, hour, minute, durationMin) {
     openUnavailPanel();
@@ -129,7 +129,7 @@ function _openUnavailWithTime(dateStr, hour, minute, durationMin) {
         if (durationMin) row.querySelector('.up-slot-duration').value = Math.min(480, Math.max(15, durationMin));
     }
     upUpdatePreview();
-});
+}
 
 // ─── Tooltip ─────────────────────────────────────────────────────────────────
 
