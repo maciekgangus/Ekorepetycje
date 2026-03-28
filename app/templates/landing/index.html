@@ -407,9 +407,9 @@
             <div class="bg-navy p-8" data-animate="fade-up" data-delay="0.1">
                 <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
-                    <span class="text-xs text-cream/40 font-medium">od</span>
+                    <span class="text-xs text-cream/60 font-medium">od</span>
                     <span class="font-serif text-5xl font-bold text-cream">70</span>
-                    <span class="text-cream/45 text-sm">zł / h</span>
+                    <span class="font-sans text-sm text-cream/70">zł / h</span>
                 </div>
                 <p class="text-xs text-cream/30 mb-7">Klasy 7–8, podstawy mechaniki i elektryczności.</p>
                 <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
@@ -463,9 +463,9 @@
             <div class="bg-navy p-8">
                 <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
-                    <span class="text-xs text-cream/40 font-medium">od</span>
+                    <span class="text-xs text-cream/60 font-medium">od</span>
                     <span class="font-serif text-5xl font-bold text-cream">80</span>
-                    <span class="text-cream/45 text-sm">zł / h</span>
+                    <span class="font-sans text-sm text-cream/70">zł / h</span>
                 </div>
                 <p class="text-xs text-cream/30 mb-7">Matura podstawowa i rozszerzona.</p>
                 <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
@@ -519,9 +519,9 @@
             <div class="bg-navy p-8">
                 <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
-                    <span class="text-xs text-cream/40 font-medium">od</span>
+                    <span class="text-xs text-cream/60 font-medium">od</span>
                     <span class="font-serif text-5xl font-bold text-cream">95</span>
-                    <span class="text-cream/45 text-sm">zł / h</span>
+                    <span class="font-sans text-sm text-cream/70">zł / h</span>
                 </div>
                 <p class="text-xs text-cream/30 mb-7">Fizyka ogólna i techniczna — poziom wyższy.</p>
                 <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
@@ -562,12 +562,28 @@
     </div>
 </section>
 
+<style>
+@keyframes pricing-fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.pricing-panel-enter {
+    animation: pricing-fade-in 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.pricing-panel-enter > div:nth-child(1) { animation-delay: 0s; }
+.pricing-panel-enter > div:nth-child(2) { animation-delay: 0.07s; }
+.pricing-panel-enter > div:nth-child(3) { animation-delay: 0.14s; }
+</style>
 <script>
 function switchLevel(level) {
     document.querySelectorAll('.pricing-panel').forEach(function(el) {
         el.classList.add('hidden');
+        el.classList.remove('pricing-panel-enter');
     });
-    document.getElementById('level-' + level).classList.remove('hidden');
+    var panel = document.getElementById('level-' + level);
+    panel.classList.remove('hidden');
+    void panel.offsetWidth; /* force reflow so animation restarts */
+    panel.classList.add('pricing-panel-enter');
     document.querySelectorAll('.pricing-tab').forEach(function(btn) {
         btn.classList.remove('border-navy', 'text-navy');
         btn.classList.add('border-transparent', 'text-ink/40');
@@ -576,6 +592,14 @@ function switchLevel(level) {
     active.classList.remove('border-transparent', 'text-ink/40');
     active.classList.add('border-navy', 'text-navy');
 }
+/* Fire animation on initial load too */
+document.addEventListener('DOMContentLoaded', function() {
+    var initial = document.getElementById('level-podstawowa');
+    if (initial) {
+        void initial.offsetWidth;
+        initial.classList.add('pricing-panel-enter');
+    }
+});
 </script>
 
 <!-- Divider -->
