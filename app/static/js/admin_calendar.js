@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // ── Drag-to-create ────────────────────────────────────────────────────
         select: function (info) {
+            if (_activeMenu) { _closeContextMenu(); calendar.unselect(); return; }
             const durationMin = Math.round((info.end - info.start) / 60000);
             const dateStr = info.startStr.split('T')[0];
             openSeriesPanelWithTime(dateStr, info.start.getHours(), info.start.getMinutes(), durationMin);
@@ -108,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // ── Click on empty slot ───────────────────────────────────────────────
         dateClick: function (info) {
+            if (_activeMenu) { _closeContextMenu(); return; }
             openSeriesPanelWithTime(
                 info.dateStr.split('T')[0],
                 info.date.getHours(),
@@ -119,7 +121,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // ── Left-click on event → context menu ───────────────────────────────
         eventClick: function (info) {
             info.jsEvent.preventDefault();
-            info.jsEvent.stopPropagation(); // prevents old { once } listener from closing new menu
+            info.jsEvent.stopPropagation();
+            if (_activeMenu) { _closeContextMenu(); return; }
             _showContextMenu(info.event, info.jsEvent);
         },
 
