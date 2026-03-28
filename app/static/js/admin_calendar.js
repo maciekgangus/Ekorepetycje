@@ -315,7 +315,7 @@ function _showEmptySlotMenu(e, calendar) {
     document.body.appendChild(menu);
     _activeMenu = menu;
     _adjustMenuPos(menu, e);
-    setTimeout(() => document.addEventListener('click', _closeContextMenu, { once: true }), 0);
+    _registerMenuDismiss();
 }
 
 // ─── Event context menu ───────────────────────────────────────────────────────
@@ -337,6 +337,18 @@ function _showContextMenuFromEl(eventEl, e, calendar) {
 }
 
 let _activeMenu = null;
+let _menuOutsideHandler = null;
+
+function _registerMenuDismiss() {
+    _menuOutsideHandler = function (e) {
+        if (!_activeMenu) return;
+        if (_activeMenu.contains(e.target)) return; // click was inside the menu — let it through
+        _closeContextMenu();
+        e.stopPropagation(); // swallow the click so FullCalendar never sees it
+    };
+    // setTimeout keeps the RIGHT-CLICK that opened the menu from immediately closing it
+    setTimeout(() => document.addEventListener('click', _menuOutsideHandler, true), 0);
+}
 
 function _showContextMenu(event, jsEvent) {
     _closeContextMenu();
@@ -394,10 +406,14 @@ function _showContextMenu(event, jsEvent) {
     document.body.appendChild(menu);
     _activeMenu = menu;
     _adjustMenuPos(menu, jsEvent);
-    setTimeout(() => document.addEventListener('click', _closeContextMenu, { once: true }), 0);
+    _registerMenuDismiss();
 }
 
 function _closeContextMenu() {
+    if (_menuOutsideHandler) {
+        document.removeEventListener('click', _menuOutsideHandler, true);
+        _menuOutsideHandler = null;
+    }
     if (_activeMenu) { _activeMenu.remove(); _activeMenu = null; }
 }
 
