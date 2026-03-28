@@ -3,21 +3,7 @@
 {% block html_attrs %}class=""{% endblock %}
 {% block body_attrs %}class="bg-gray-950 min-h-screen flex flex-col font-sans text-white"{% endblock %}
 
-{% block navbar %}
-<nav class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-gray-950/80 border-b border-gray-800/50">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <a href="/" class="text-xl font-semibold tracking-tight text-white hover:text-green-400 transition-colors">Ekorepetycje</a>
-        <div class="flex items-center gap-4">
-            <a href="/student/" class="text-sm text-gray-400 hover:text-white transition-colors">Moje zajęcia</a>
-            <span class="text-sm text-gray-500">{{ user.full_name }}</span>
-            <form method="post" action="/logout" class="inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
-                <button class="text-sm text-gray-400 hover:text-white transition-colors">Wyloguj</button>
-            </form>
-        </div>
-    </div>
-</nav>
-{% endblock %}
+{% block navbar %}{% include "components/navbar_student.html" %}{% endblock %}
 
 {% block title %}Mój Kalendarz — Ekorepetycje{% endblock %}
 
