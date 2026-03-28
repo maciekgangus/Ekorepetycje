@@ -358,113 +358,225 @@
 <section id="cennik" class="py-24 px-6 scroll-mt-16">
     <div class="max-w-6xl mx-auto">
 
-        <div class="mb-16" data-animate="fade-up">
+        <div class="mb-4" data-animate="fade-up">
             <p class="text-xs font-medium text-ink/40 tracking-[0.2em] uppercase mb-3">Cennik</p>
             <h2 class="font-serif text-4xl md:text-5xl font-bold text-ink">Przejrzyste ceny</h2>
         </div>
+        <p class="text-sm text-ink/50 mb-14 max-w-xl" data-animate="fade-up">
+            Ceny zależą od poziomu zaawansowania, wybranego nauczyciela oraz indywidualnych potrzeb ucznia.
+            Podane wartości to ceny wywoławcze — skontaktuj się z nami po dokładną wycenę.
+        </p>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+        <!-- Level tabs -->
+        <div class="flex gap-1 mb-10 border-b border-ink/10" data-animate="fade-up">
+            <button onclick="switchLevel('podstawowa')" id="tab-podstawowa"
+                    class="pricing-tab px-5 py-3 text-sm font-medium tracking-wide transition-colors border-b-2 -mb-px border-navy text-navy">
+                Szkoła podstawowa
+            </button>
+            <button onclick="switchLevel('liceum')" id="tab-liceum"
+                    class="pricing-tab px-5 py-3 text-sm font-medium tracking-wide transition-colors border-b-2 -mb-px border-transparent text-ink/40 hover:text-ink">
+                Liceum / Matura
+            </button>
+            <button onclick="switchLevel('studia')" id="tab-studia"
+                    class="pricing-tab px-5 py-3 text-sm font-medium tracking-wide transition-colors border-b-2 -mb-px border-transparent text-ink/40 hover:text-ink">
+                Studia
+            </button>
+        </div>
 
-            <!-- Single -->
+        <!-- Szkoła podstawowa -->
+        <div id="level-podstawowa" class="pricing-panel grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <!-- Matematyka -->
             <div class="bg-cream p-8" data-animate="fade-left">
-                <p class="text-xs font-medium text-ink/40 tracking-[0.15em] uppercase mb-6">Pojedyncza lekcja</p>
-                <div class="flex items-baseline gap-2 mb-2">
-                    <span class="font-serif text-5xl font-bold text-ink">80</span>
-                    <span class="text-ink/50 text-sm">zł / h</span>
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Matematyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-ink">75</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
                 </div>
-                <p class="text-xs text-ink/35 mb-8">Bez zobowiązań. Idealna na próbę.</p>
-                <ul class="space-y-3 text-sm text-ink/60 mb-8">
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Jedna godzina zajęć</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Materiały do powtórki</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Elastyczny termin</span>
-                    </li>
+                <p class="text-xs text-ink/35 mb-7">Klasy 4–8, egzamin ósmoklasisty.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Ułamki, równania, geometria</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Testy i zadania próbne</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Materiały do powtórki</span></li>
                 </ul>
-                <a href="#kontakt"
-                   class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/60 text-sm py-3 transition-colors tracking-wide">
-                    Umów lekcję
-                </a>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
             </div>
 
-            <!-- Package 5 — featured -->
-            <div class="bg-navy p-8 relative" data-animate="fade-up" data-delay="0.1">
-                <span class="absolute top-6 right-6 text-[10px] font-medium text-gold tracking-[0.15em] uppercase">Popularne</span>
-                <p class="text-xs font-medium text-cream/40 tracking-[0.15em] uppercase mb-6">Pakiet 5 lekcji</p>
-                <div class="flex items-baseline gap-2 mb-2">
+            <!-- Fizyka -->
+            <div class="bg-navy p-8" data-animate="fade-up" data-delay="0.1">
+                <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-cream/40 font-medium">od</span>
                     <span class="font-serif text-5xl font-bold text-cream">70</span>
-                    <span class="text-cream/50 text-sm">zł / h</span>
+                    <span class="text-cream/45 text-sm">zł / h</span>
                 </div>
-                <p class="text-xs text-cream/35 mb-8">350 zł łącznie. Oszczędzasz 50 zł.</p>
-                <ul class="space-y-3 text-sm text-cream/70 mb-8">
-                    <li class="flex items-start gap-2">
-                        <span class="text-gold mt-0.5">—</span>
-                        <span>5 godzin zajęć</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-gold mt-0.5">—</span>
-                        <span>Indywidualny plan nauki</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-gold mt-0.5">—</span>
-                        <span>Materiały i ćwiczenia</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-gold mt-0.5">—</span>
-                        <span>Raport postępów</span>
-                    </li>
+                <p class="text-xs text-cream/30 mb-7">Klasy 7–8, podstawy mechaniki i elektryczności.</p>
+                <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Siły, ruch, energia</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Wzory i obliczenia</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Przygotowanie do sprawdzianów</span></li>
                 </ul>
-                <a href="#kontakt"
-                   class="block text-center bg-cream hover:bg-cream/90 text-navy text-sm py-3 font-medium transition-colors tracking-wide">
-                    Wybierz pakiet
-                </a>
+                <a href="#kontakt" class="block text-center bg-cream hover:bg-cream/90 text-navy text-sm py-3 font-medium transition-colors tracking-wide">Umów lekcję</a>
             </div>
 
-            <!-- Package 10 -->
+            <!-- Języki -->
             <div class="bg-cream p-8" data-animate="fade-right" data-delay="0.2">
-                <p class="text-xs font-medium text-ink/40 tracking-[0.15em] uppercase mb-6">Pakiet 10 lekcji</p>
-                <div class="flex items-baseline gap-2 mb-2">
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Języki obce</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
                     <span class="font-serif text-5xl font-bold text-ink">65</span>
-                    <span class="text-ink/50 text-sm">zł / h</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
                 </div>
-                <p class="text-xs text-ink/35 mb-8">650 zł łącznie. Oszczędzasz 150 zł.</p>
-                <ul class="space-y-3 text-sm text-ink/60 mb-8">
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>10 godzin zajęć</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Wszystko z pakietu 5</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Cotygodniowe raporty</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-navy mt-0.5">—</span>
-                        <span>Priorytetowy kontakt</span>
-                    </li>
+                <p class="text-xs text-ink/35 mb-7">Angielski, niemiecki — poziom A1–B1.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Gramatyka i słownictwo</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Konwersacje i wymowa</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Przygotowanie do egzaminów szkolnych</span></li>
                 </ul>
-                <a href="#kontakt"
-                   class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/60 text-sm py-3 transition-colors tracking-wide">
-                    Wybierz pakiet
-                </a>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
             </div>
 
         </div>
 
-        <p class="text-xs text-ink/35 mt-6 text-center">
-            Ceny dotyczą jednej godziny lekcyjnej (60 min). Pierwsza konsultacja bezpłatna.
-        </p>
+        <!-- Liceum / Matura -->
+        <div id="level-liceum" class="pricing-panel hidden grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <!-- Matematyka -->
+            <div class="bg-cream p-8">
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Matematyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-ink">90</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-7">Matura podstawowa i rozszerzona.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Analiza, całki, statystyka</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Zadania maturalne z lat ubiegłych</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Indywidualny plan przygotowań</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+            <!-- Fizyka — featured -->
+            <div class="bg-navy p-8">
+                <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-cream/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-cream">80</span>
+                    <span class="text-cream/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-cream/30 mb-7">Matura podstawowa i rozszerzona.</p>
+                <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Mechanika, termodynamika, optyka</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Wzory i zadania obliczeniowe</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Testy próbne CKE</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center bg-cream hover:bg-cream/90 text-navy text-sm py-3 font-medium transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+            <!-- Języki -->
+            <div class="bg-cream p-8">
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Języki obce</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-ink">70</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-7">Angielski, niemiecki — poziom B1–C1.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Matura ustna i pisemna</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Cambridge FCE / CAE</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Konwersacje i słownictwo</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+        </div>
+
+        <!-- Studia -->
+        <div id="level-studia" class="pricing-panel hidden grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
+
+            <!-- Matematyka -->
+            <div class="bg-cream p-8">
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Matematyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-ink">100</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-7">Analiza, algebra, statystyka akademicka.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Rachunek różniczkowy i całkowy</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Algebra liniowa i teoria zbiorów</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Przygotowanie do zaliczeń i egzaminów</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+            <!-- Fizyka — featured -->
+            <div class="bg-navy p-8">
+                <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-cream/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-cream">95</span>
+                    <span class="text-cream/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-cream/30 mb-7">Fizyka ogólna i techniczna — poziom wyższy.</p>
+                <ul class="space-y-2.5 text-sm text-cream/60 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Elektrodynamika i mechanika kwantowa</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Zadania obliczeniowe i teoria</span></li>
+                    <li class="flex items-start gap-2"><span class="text-gold mt-0.5">—</span><span>Egzaminy semestralne</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center bg-cream hover:bg-cream/90 text-navy text-sm py-3 font-medium transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+            <!-- Języki -->
+            <div class="bg-cream p-8">
+                <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Języki obce</p>
+                <div class="flex items-baseline gap-1.5 mb-1">
+                    <span class="text-xs text-ink/40 font-medium">od</span>
+                    <span class="font-serif text-5xl font-bold text-ink">80</span>
+                    <span class="text-ink/45 text-sm">zł / h</span>
+                </div>
+                <p class="text-xs text-ink/35 mb-7">Angielski akademicki, biznesowy, techniczny.</p>
+                <ul class="space-y-2.5 text-sm text-ink/55 mb-8">
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Angielski naukowy i akademicki</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Przygotowanie do IELTS / TOEFL</span></li>
+                    <li class="flex items-start gap-2"><span class="text-navy mt-0.5">—</span><span>Angielski zawodowy i biznesowy</span></li>
+                </ul>
+                <a href="#kontakt" class="block text-center border border-ink/20 hover:border-navy hover:text-navy text-ink/55 text-sm py-3 transition-colors tracking-wide">Umów lekcję</a>
+            </div>
+
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <p class="text-xs text-ink/35 max-w-lg">
+                * Ceny wywoławcze za godzinę lekcyjną (60 min). Ostateczna stawka zależy od poziomu zaawansowania,
+                wybranego nauczyciela oraz indywidualnych potrzeb uczestnika. Pierwsza konsultacja bezpłatna.
+            </p>
+            <a href="#kontakt" class="text-xs font-medium text-navy hover:underline whitespace-nowrap tracking-wide">Zapytaj o wycenę →</a>
+        </div>
     </div>
 </section>
+
+<script>
+function switchLevel(level) {
+    document.querySelectorAll('.pricing-panel').forEach(function(el) {
+        el.classList.add('hidden');
+    });
+    document.getElementById('level-' + level).classList.remove('hidden');
+    document.querySelectorAll('.pricing-tab').forEach(function(btn) {
+        btn.classList.remove('border-navy', 'text-navy');
+        btn.classList.add('border-transparent', 'text-ink/40');
+    });
+    var active = document.getElementById('tab-' + level);
+    active.classList.remove('border-transparent', 'text-ink/40');
+    active.classList.add('border-navy', 'text-navy');
+}
+</script>
 
 <!-- Divider -->
 <div class="border-t border-ink/10"></div>
