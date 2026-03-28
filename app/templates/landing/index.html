@@ -387,7 +387,7 @@
         <div id="level-podstawowa" class="pricing-panel grid grid-cols-1 md:grid-cols-3 gap-px bg-ink/10">
 
             <!-- Matematyka -->
-            <div class="bg-cream p-8" data-animate="fade-left">
+            <div class="bg-cream p-8">
                 <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Matematyka</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
                     <span class="text-xs text-ink/40 font-medium">od</span>
@@ -404,7 +404,7 @@
             </div>
 
             <!-- Fizyka -->
-            <div class="bg-navy p-8" data-animate="fade-up" data-delay="0.1">
+            <div class="bg-navy p-8">
                 <p class="text-[10px] font-medium text-cream/35 tracking-[0.2em] uppercase mb-5">Fizyka</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
                     <span class="text-xs text-cream/60 font-medium">od</span>
@@ -421,7 +421,7 @@
             </div>
 
             <!-- Języki -->
-            <div class="bg-cream p-8" data-animate="fade-right" data-delay="0.2">
+            <div class="bg-cream p-8">
                 <p class="text-[10px] font-medium text-ink/35 tracking-[0.2em] uppercase mb-5">Języki obce</p>
                 <div class="flex items-baseline gap-1.5 mb-1">
                     <span class="text-xs text-ink/40 font-medium">od</span>
@@ -564,15 +564,15 @@
 
 <style>
 @keyframes pricing-fade-in {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.pricing-panel-enter {
-    animation: pricing-fade-in 0.45s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+.pricing-panel-enter > div {
+    animation: pricing-fade-in 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 .pricing-panel-enter > div:nth-child(1) { animation-delay: 0s; }
-.pricing-panel-enter > div:nth-child(2) { animation-delay: 0.07s; }
-.pricing-panel-enter > div:nth-child(3) { animation-delay: 0.14s; }
+.pricing-panel-enter > div:nth-child(2) { animation-delay: 0.1s; }
+.pricing-panel-enter > div:nth-child(3) { animation-delay: 0.2s; }
 </style>
 <script>
 function switchLevel(level) {
