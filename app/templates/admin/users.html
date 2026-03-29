@@ -79,16 +79,6 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
-                            <!-- Role change -->
-                            <form method="post" action="/admin/users/{{ user.id }}/role" class="flex items-center gap-2"
-                                  hx-post="/admin/users/{{ user.id }}/role" hx-target="this" hx-swap="outerHTML">
-                                <select name="role" class="bg-gray-800 border border-gray-700 text-white text-xs px-2 py-1 rounded focus:outline-none">
-                                    {% for r in roles %}
-                                    <option value="{{ r.value }}" {% if r == user.role %}selected{% endif %}>{{ r.value }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="submit" class="text-xs text-gray-400 hover:text-white">Zmień rolę</button>
-                            </form>
                             <!-- Reset password -->
                             <form method="post" action="/admin/users/{{ user.id }}/reset-password" class="flex items-center gap-2"
                                   hx-post="/admin/users/{{ user.id }}/reset-password" hx-target="this" hx-swap="outerHTML">
