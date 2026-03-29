@@ -12,6 +12,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.api import routes_landing, routes_api, routes_admin
 from app.api import routes_auth, routes_profile, routes_teacher, routes_student
+from app.api import routes_change_requests
 from app.core.auth import _LoginRedirect, _WrongRole, _ROLE_HOME
 from app.core.config import settings
 from app.core.templates import templates
@@ -55,6 +56,7 @@ app.include_router(routes_student.router)
 app.include_router(routes_landing.router)
 app.include_router(routes_api.router)
 app.include_router(routes_admin.router)
+app.include_router(routes_change_requests.router)
 
 
 @app.exception_handler(_LoginRedirect)
