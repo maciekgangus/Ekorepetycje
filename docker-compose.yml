@@ -66,6 +66,18 @@ services:
     profiles:
       - dev
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   web:
     build: .
     ports:
@@ -81,9 +93,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     # Pass --reload for live code reloading in development
     command: --reload
 
 volumes:
   postgres_data:
   ollama_data:
+  redis_data:

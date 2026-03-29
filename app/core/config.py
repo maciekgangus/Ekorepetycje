@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # Where contact-form submissions are delivered.
     RESEND_TO_EMAIL: str = "kontakt@ekorepetycje.pl"
 
+    # ── Redis (event cache) ───────────────────────────────────────────────────
+    # Leave empty to disable caching (tests, local dev without Redis).
+    REDIS_URL: str = ""
+
     # ── Cloudflare Turnstile (CAPTCHA) ────────────────────────────────────────
     # Default values are Cloudflare's official test keys — always pass locally.
     # Replace with real keys from https://dash.cloudflare.com/ before going live.
