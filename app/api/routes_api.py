@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
@@ -104,9 +104,15 @@ async def delete_event(
 
 
 @router.get("/offerings", response_model=list[OfferingRead])
-async def get_offerings(db: AsyncSession = Depends(get_db)) -> list[OfferingRead]:
-    """Return all offerings."""
-    result = await db.execute(select(Offering))
+async def get_offerings(
+    teacher_id: UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+) -> list[OfferingRead]:
+    """Return offerings, optionally filtered to a specific teacher."""
+    q = select(Offering)
+    if teacher_id:
+        q = q.where(Offering.teacher_id == teacher_id)
+    result = await db.execute(q)
     return [OfferingRead.model_validate(o) for o in result.scalars().all()]
 
 
@@ -325,6 +331,12 @@ async def create_series(
     if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Cannot create series for another teacher")
 
+    # Verify offering belongs to the selected teacher
+    if payload.offering_id:
+        offering = await db.get(Offering, payload.offering_id)
+        if not offering or offering.teacher_id != payload.teacher_id:
+            raise HTTPException(status_code=422, detail="Offering does not belong to the selected teacher.")
+
     series_id = uuid.uuid4()
 
     try:
@@ -474,6 +486,12 @@ async def update_series_from(
         raise HTTPException(status_code=403, detail="Not your series")
     if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Cannot reassign series to another teacher")
+
+    # Verify offering belongs to the selected teacher
+    if payload.offering_id:
+        offering = await db.get(Offering, payload.offering_id)
+        if not offering or offering.teacher_id != payload.teacher_id:
+            raise HTTPException(status_code=422, detail="Offering does not belong to the selected teacher.")
 
     pivot_result = await db.execute(
         select(ScheduleEvent).where(ScheduleEvent.id == event_id)
