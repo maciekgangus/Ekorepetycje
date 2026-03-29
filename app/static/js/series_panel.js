@@ -113,6 +113,7 @@ async function _spInitDropdowns(prefill = null) {
             _teachers = await res.json();
         }
         const sel = document.getElementById('sp-teacher');
+        sel.onchange = spOnTeacherChange;
         sel.innerHTML = '<option value="">Wybierz nauczyciela...</option>' +
             _teachers.map(t => `<option value="${_h(t.id)}">${_h(t.full_name)}</option>`).join('');
         if (prefill) sel.value = prefill.teacher_id;
@@ -128,14 +129,12 @@ async function _spInitDropdowns(prefill = null) {
         _students.map(s => `<option value="${_h(s.id)}">${_h(s.full_name)}</option>`).join('');
     if (prefill && prefill.student_id) stuSel.value = prefill.student_id;
 
-    // Offerings
-    if (_offerings.length === 0) {
-        const res = await fetch('/api/offerings');
-        _offerings = await res.json();
-    }
+    // Offerings — scoped to teacher
+    const effectiveTeacherId = isAdmin
+        ? document.getElementById('sp-teacher').value
+        : panel.dataset.userId;
+    await _loadOfferings(effectiveTeacherId);
     const offSel = document.getElementById('sp-offering');
-    offSel.innerHTML = '<option value="">Wybierz ofertę...</option>' +
-        _offerings.map(o => `<option value="${_h(o.id)}">${_h(o.title)}</option>`).join('');
     if (prefill) {
         offSel.value = prefill.offering_id;
         document.getElementById('sp-title').value = prefill.title;
@@ -160,6 +159,25 @@ async function _spInitDropdowns(prefill = null) {
         }
     }
     spUpdatePreview();
+}
+
+// ─── Offerings loader ────────────────────────────────────────────────────────
+
+async function _loadOfferings(teacherId) {
+    const url = teacherId ? `/api/offerings?teacher_id=${encodeURIComponent(teacherId)}` : '/api/offerings';
+    const res = await fetch(url);
+    _offerings = await res.json();
+    const offSel = document.getElementById('sp-offering');
+    offSel.innerHTML = '<option value="">Wybierz ofertę...</option>' +
+        _offerings.map(o => `<option value="${_h(o.id)}">${_h(o.title)}</option>`).join('');
+}
+
+async function spOnTeacherChange() {
+    const teacherId = document.getElementById('sp-teacher').value;
+    _offerings = [];
+    await _loadOfferings(teacherId);
+    document.getElementById('sp-offering').value = '';
+    document.getElementById('sp-title').value = '';
 }
 
 // ─── Interval selector ──────────────────────────────────────────────────────
