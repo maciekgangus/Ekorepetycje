@@ -35,18 +35,29 @@ router = APIRouter(prefix="/api", tags=["api"])
 
 
 def _parse_dt(value: str | None) -> datetime | None:
-    """Parse a datetime string tolerantly.
+    """Parse an ISO 8601 datetime string, handling the ASGI query-string issue
+    where a '+' timezone offset (e.g. +01:00) is decoded as a space.
 
-    Handles ISO 8601 strings from FullCalendar (e.g. ``2026-03-29T00:00:00Z``) as well
-    as timezone-aware strings where the ``+`` sign was decoded as a space by ASGI form
-    encoding (e.g. ``2026-03-29T00:00:00 00:00`` → ``2026-03-29T00:00:00+00:00``).
+    Handles these cases:
+    - 'Z' suffix
+    - '+HH:MM' or '-HH:MM' offset (with or without the + being space-corrupted)
+    - Naive datetime strings
     """
     if value is None:
         return None
-    # ASGI query-string decoding turns '+' → ' '; restore it so fromisoformat works.
-    normalized = value.strip().replace(" ", "+")
-    # Python 3.11+ fromisoformat handles 'Z' and offset forms directly.
-    return datetime.fromisoformat(normalized)
+    s = value.strip()
+    # ASGI query-string decoding turns '+' in timezone offset into a space.
+    # Only restore the '+' when it appears in the offset position: the 4th-to-last
+    # or 6th-to-last character is a space followed by two digits, a colon, two digits.
+    import re
+    s = re.sub(r' (\d{2}:\d{2})$', r'+\1', s)
+    try:
+        return datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid date format for parameter: {value!r}",
+        )
 
 
 @router.get("/events", response_model=list[ScheduleEventRead])
@@ -80,7 +91,7 @@ async def get_events(
     if cache_key:
         cached = await cache_get(cache_key)
         if cached is not None:
-            return json.loads(cached)
+            return [ScheduleEventRead.model_validate(item) for item in json.loads(cached)]
 
     # ── DB query ─────────────────────────────────────────────────────────────
     q = select(ScheduleEvent)

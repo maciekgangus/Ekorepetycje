@@ -17,11 +17,6 @@ def _engine():
     return create_async_engine(settings.DATABASE_URL, poolclass=NullPool)
 
 
-def _csrf(cookie: str) -> str:
-    from itsdangerous import URLSafeSerializer
-    return URLSafeSerializer(settings.SECRET_KEY, salt="csrf").dumps(cookie)
-
-
 @pytest.fixture
 async def windowed_env():
     """Two events: one this week, one 6 weeks later. One teacher, one student."""
