@@ -27,7 +27,18 @@
                         {% if event.teacher %}<span>{{ event.teacher.full_name }}</span>{% endif %}
                     </div>
                 </div>
-                <span class="px-2 py-1 text-xs font-medium bg-green-500/15 text-green-400 rounded-full">Zaplanowane</span>
+                <div class="flex items-center gap-2">
+                    <span class="px-2 py-1 text-xs font-medium bg-green-500/15 text-green-400 rounded-full">Zaplanowane</span>
+                    <button onclick="document.getElementById('proposal-s-{{ event.id }}').classList.toggle('hidden')"
+                            class="text-xs border border-gray-700 text-gray-400 hover:text-white px-3 py-1.5 rounded-lg transition-colors">
+                        Zaproponuj zmianę
+                    </button>
+                </div>
+            </div>
+            <div id="proposal-s-{{ event.id }}" class="hidden">
+                {% with event=event %}
+                {% include "components/change_request_form.html" %}
+                {% endwith %}
             </div>
             {% endfor %}
         </div>

@@ -4,6 +4,15 @@
         <div class="flex items-center gap-4">
             <a href="/student/" class="text-sm text-gray-400 hover:text-white transition-colors">Moje zajęcia</a>
             <a href="/student/calendar" class="text-sm text-gray-400 hover:text-white transition-colors">Kalendarz</a>
+            <a href="/student/proposals" class="relative text-sm text-gray-400 hover:text-white transition-colors">
+                Propozycje
+                <span hx-get="/api/change-requests/pending-count"
+                      hx-trigger="load, every 60s"
+                      hx-target="this"
+                      hx-swap="innerHTML"
+                      class="absolute -top-1 -right-3 w-4 h-4 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full hidden [&:not(:empty)]:flex">
+                </span>
+            </a>
             <a href="/profile" class="text-sm text-gray-400 hover:text-white transition-colors">Profil</a>
             <span class="text-sm text-gray-500">{{ user.full_name }}</span>
             <form method="post" action="/logout" class="inline">
