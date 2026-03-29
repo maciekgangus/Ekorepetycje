@@ -71,3 +71,112 @@ async def create_change_request(
         )
 
     return cr
+
+
+async def _get_pending_request(db: AsyncSession, cr_id: UUID) -> EventChangeRequest:
+    """Fetch a change request by ID; raise 404 if missing, 409 if not PENDING."""
+    cr = (await db.execute(
+        select(EventChangeRequest).where(EventChangeRequest.id == cr_id)
+    )).scalar_one_or_none()
+    if cr is None:
+        raise HTTPException(status_code=404, detail="Nie znaleziono prośby.")
+    if cr.status != ChangeRequestStatus.PENDING:
+        raise HTTPException(
+            status_code=409,
+            detail="Prośba nie jest już oczekująca.",
+        )
+    return cr
+
+
+@router.patch("/{cr_id}/accept", response_model=EventChangeRequestRead)
+async def accept_change_request(
+    cr_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+    _csrf: None = Depends(require_csrf),
+) -> EventChangeRequest:
+    """Responder accepts the request — event times are updated immediately."""
+    cr = await _get_pending_request(db, cr_id)
+    if current_user.id != cr.responder_id:
+        raise HTTPException(status_code=403, detail="Tylko odbiorca może zaakceptować.")
+
+    event = (await db.execute(
+        select(ScheduleEvent).where(ScheduleEvent.id == cr.event_id)
+    )).scalar_one_or_none()
+    if event is None:
+        raise HTTPException(status_code=404, detail="Zajęcia nie istnieją.")
+
+    event.start_time = cr.new_start
+    event.end_time = cr.new_end
+    cr.status = ChangeRequestStatus.ACCEPTED
+    cr.resolved_at = datetime.now(timezone.utc)
+    await db.flush()
+
+    # Invalidate Redis cache (Plan 1 integration).
+    try:
+        from app.core.cache import invalidate_user as _cache_invalidate
+        await _cache_invalidate(event.teacher_id, event.student_id)
+    except ImportError:
+        pass
+
+    # Email proposer — failure must not fail the request.
+    try:
+        from app.services.email import send_change_request_outcome_email
+        await send_change_request_outcome_email(cr, event, accepted=True)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Failed to send accept email for cr_id=%s", cr_id
+        )
+
+    return cr
+
+
+@router.patch("/{cr_id}/reject", response_model=EventChangeRequestRead)
+async def reject_change_request(
+    cr_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+    _csrf: None = Depends(require_csrf),
+) -> EventChangeRequest:
+    """Responder rejects the request."""
+    cr = await _get_pending_request(db, cr_id)
+    if current_user.id != cr.responder_id:
+        raise HTTPException(status_code=403, detail="Tylko odbiorca może odrzucić.")
+
+    cr.status = ChangeRequestStatus.REJECTED
+    cr.resolved_at = datetime.now(timezone.utc)
+    await db.flush()
+
+    event = (await db.execute(
+        select(ScheduleEvent).where(ScheduleEvent.id == cr.event_id)
+    )).scalar_one_or_none()
+
+    try:
+        from app.services.email import send_change_request_outcome_email
+        await send_change_request_outcome_email(cr, event, accepted=False)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning(
+            "Failed to send reject email for cr_id=%s", cr_id
+        )
+
+    return cr
+
+
+@router.patch("/{cr_id}/cancel", response_model=EventChangeRequestRead)
+async def cancel_change_request(
+    cr_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+    _csrf: None = Depends(require_csrf),
+) -> EventChangeRequest:
+    """Proposer cancels their own pending request."""
+    cr = await _get_pending_request(db, cr_id)
+    if current_user.id != cr.proposer_id:
+        raise HTTPException(status_code=403, detail="Tylko wnioskodawca może anulować.")
+
+    cr.status = ChangeRequestStatus.CANCELLED
+    cr.resolved_at = datetime.now(timezone.utc)
+    await db.flush()
+    return cr

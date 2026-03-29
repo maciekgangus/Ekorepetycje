@@ -194,3 +194,142 @@ async def test_unrelated_user_cannot_create_change_request(client: AsyncClient, 
                 await s.delete(u)
             await s.commit()
         await engine.dispose()
+
+
+async def test_responder_can_accept(client: AsyncClient, cr_env):
+    """Responder accepts → event times updated, status=ACCEPTED."""
+    from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
+    from app.models.scheduling import ScheduleEvent
+
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    student_cookie = env["student_cookie"]
+
+    # Teacher creates the request (student is responder)
+    new_start = (env["event_start"] + timedelta(hours=2)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=3)).isoformat()
+    r = await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    assert r.status_code == 201
+    cr_id = r.json()["id"]
+
+    # Student (responder) accepts
+    r2 = await client.patch(
+        f"/api/change-requests/{cr_id}/accept",
+        cookies={"session": student_cookie},
+        headers={"X-CSRF-Token": _csrf(student_cookie)},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["status"] == "accepted"
+
+    # Verify event times were updated in DB
+    engine = _engine()
+    factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    async with factory() as s:
+        ev = await s.get(ScheduleEvent, env["event_id"])
+        assert ev is not None
+        assert ev.start_time.hour == (env["event_start"] + timedelta(hours=2)).hour
+    await engine.dispose()
+
+
+async def test_proposer_cannot_accept(client: AsyncClient, cr_env):
+    """The proposer cannot accept their own request."""
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    new_start = (env["event_start"] + timedelta(hours=2)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=3)).isoformat()
+    r = await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    cr_id = r.json()["id"]
+
+    # Teacher (proposer) tries to accept — should be 403
+    r2 = await client.patch(
+        f"/api/change-requests/{cr_id}/accept",
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    assert r2.status_code == 403
+
+
+async def test_accept_already_resolved_returns_409(client: AsyncClient, cr_env):
+    """Accepting an already-accepted request returns 409."""
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    student_cookie = env["student_cookie"]
+    new_start = (env["event_start"] + timedelta(hours=2)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=3)).isoformat()
+    r = await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    cr_id = r.json()["id"]
+    await client.patch(
+        f"/api/change-requests/{cr_id}/accept",
+        cookies={"session": student_cookie},
+        headers={"X-CSRF-Token": _csrf(student_cookie)},
+    )
+    # Accept again
+    r3 = await client.patch(
+        f"/api/change-requests/{cr_id}/accept",
+        cookies={"session": student_cookie},
+        headers={"X-CSRF-Token": _csrf(student_cookie)},
+    )
+    assert r3.status_code == 409
+
+
+async def test_responder_can_reject(client: AsyncClient, cr_env):
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    student_cookie = env["student_cookie"]
+    new_start = (env["event_start"] + timedelta(hours=4)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=5)).isoformat()
+    r = await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    cr_id = r.json()["id"]
+    r2 = await client.patch(
+        f"/api/change-requests/{cr_id}/reject",
+        cookies={"session": student_cookie},
+        headers={"X-CSRF-Token": _csrf(student_cookie)},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["status"] == "rejected"
+
+
+async def test_proposer_can_cancel(client: AsyncClient, cr_env):
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    new_start = (env["event_start"] + timedelta(hours=4)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=5)).isoformat()
+    r = await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    cr_id = r.json()["id"]
+    r2 = await client.patch(
+        f"/api/change-requests/{cr_id}/cancel",
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["status"] == "cancelled"
