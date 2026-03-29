@@ -139,25 +139,6 @@ async def create_user(
     )
 
 
-@router.post("/users/{user_id}/role", response_class=HTMLResponse)
-async def update_user_role(
-    request: Request,
-    user_id: UUID,
-    role: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
-) -> HTMLResponse:
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if user:
-        user.role = UserRole(role)
-        await db.flush()
-    return templates.TemplateResponse(
-        request, "components/inline_success.html",
-        {"message": "Rola zaktualizowana."},
-    )
-
 
 @router.post("/users/{user_id}/reset-password", response_class=HTMLResponse)
 async def reset_user_password(
