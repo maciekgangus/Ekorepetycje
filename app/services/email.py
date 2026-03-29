@@ -296,15 +296,222 @@ async def send_contact_email(form: ContactForm) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Change request emails (bilateral proposal system)
+# ---------------------------------------------------------------------------
+
+def _change_request_html(cr, event) -> str:
+    """Email to responder: you have a new reschedule request."""
+    from html import escape
+    proposer_name = escape(cr.proposer.full_name)
+    event_title = escape(event.title)
+    new_start = cr.new_start.strftime("%d.%m.%Y %H:%M")
+    new_end = cr.new_end.strftime("%H:%M")
+    note_row = ""
+    if cr.note:
+        note_row = f"""
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:13px;width:120px;vertical-align:top">Wiadomość</td>
+          <td style="padding:6px 0;color:#111827;font-size:13px">{escape(cr.note)}</td>
+        </tr>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prośba o zmianę terminu — Ekorepetycje</title>
+</head>
+<body style="margin:0;padding:0;background:#f0fdf4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;padding:40px 16px">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+        <tr>
+          <td style="background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#bbf7d0">Platforma korepetycji</p>
+            <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">Ekorepetycje</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#ffffff;padding:36px 40px">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#16a34a">Nowa prośba o zmianę</p>
+            <h2 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#111827;line-height:1.3">
+              {proposer_name} chce zmienić termin zajęć
+            </h2>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:28px">
+              <tr>
+                <td style="padding:20px 24px">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:6px 0;color:#6b7280;font-size:13px;width:120px;vertical-align:top">Zajęcia</td>
+                      <td style="padding:6px 0;color:#111827;font-size:13px;font-weight:600">{event_title}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding:6px 0;color:#6b7280;font-size:13px;vertical-align:top">Nowy termin</td>
+                      <td style="padding:6px 0;color:#111827;font-size:13px;font-weight:600">{new_start} – {new_end}</td>
+                    </tr>{note_row}
+                  </table>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6">
+              Zaloguj się do platformy, aby zaakceptować lub odrzucić tę prośbę.
+            </p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb">
+            <p style="margin:0;font-size:11px;color:#9ca3af">Ekorepetycje — powiadomienie automatyczne.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+
+def _change_request_outcome_html(cr, event, accepted: bool) -> str:
+    """Email to proposer: their request was accepted or rejected."""
+    from html import escape
+    responder_name = escape(cr.responder.full_name)
+    event_title = escape(event.title)
+    outcome_pl = "zaakceptowana" if accepted else "odrzucona"
+    outcome_color = "#16a34a" if accepted else "#dc2626"
+    time_row = ""
+    if accepted:
+        new_start = cr.new_start.strftime("%d.%m.%Y %H:%M")
+        new_end = cr.new_end.strftime("%H:%M")
+        time_row = f"""
+        <tr>
+          <td style="padding:6px 0;color:#6b7280;font-size:13px;width:120px">Nowy termin</td>
+          <td style="padding:6px 0;color:#111827;font-size:13px;font-weight:600">{new_start} – {new_end}</td>
+        </tr>"""
+
+    return f"""<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Odpowiedź na prośbę o zmianę — Ekorepetycje</title>
+</head>
+<body style="margin:0;padding:0;background:#f0fdf4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0fdf4;padding:40px 16px">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%">
+        <tr>
+          <td style="background:linear-gradient(135deg,#16a34a 0%,#15803d 100%);border-radius:16px 16px 0 0;padding:32px 40px;text-align:center">
+            <p style="margin:0 0 4px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#bbf7d0">Platforma korepetycji</p>
+            <h1 style="margin:0;font-size:26px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">Ekorepetycje</h1>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#ffffff;padding:36px 40px">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:{outcome_color}">
+              Prośba {outcome_pl}
+            </p>
+            <h2 style="margin:0 0 24px;font-size:22px;font-weight:700;color:#111827;line-height:1.3">
+              {responder_name} {outcome_pl} Twoją prośbę
+            </h2>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:28px">
+              <tr>
+                <td style="padding:20px 24px">
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding:6px 0;color:#6b7280;font-size:13px;width:120px">Zajęcia</td>
+                      <td style="padding:6px 0;color:#111827;font-size:13px;font-weight:600">{event_title}</td>
+                    </tr>{time_row}
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f9fafb;border-radius:0 0 16px 16px;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb">
+            <p style="margin:0;font-size:11px;color:#9ca3af">Ekorepetycje — powiadomienie automatyczne.</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+
+
+async def send_change_request_email(cr, event) -> None:
+    """Notify the responder that a change request has been created.
+
+    Falls back to logging when RESEND_API_KEY is not set.
+    """
+    from app.core.config import settings
+
+    if not settings.RESEND_API_KEY:
+        logger.info(
+            "Change request email [no RESEND_API_KEY] | to=%s | event=%s | new_start=%s",
+            cr.responder.email, event.title, cr.new_start,
+        )
+        return
+
+    import resend
+    resend.api_key = settings.RESEND_API_KEY
+    msg = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [cr.responder.email],
+        "subject": f"Prośba o zmianę terminu: {event.title}",
+        "html": _change_request_html(cr, event),
+    }
+    await asyncio.to_thread(resend.Emails.send, msg)
+    logger.info("Change request email sent | to=%s", cr.responder.email)
+
+
+async def send_change_request_outcome_email(cr, event, accepted: bool) -> None:
+    """Notify the proposer of the outcome (accept/reject).
+
+    Falls back to logging when RESEND_API_KEY is not set.
+    """
+    from app.core.config import settings
+
+    outcome = "accepted" if accepted else "rejected"
+    if not settings.RESEND_API_KEY:
+        logger.info(
+            "Change outcome email [no RESEND_API_KEY] | to=%s | outcome=%s",
+            cr.proposer.email, outcome,
+        )
+        return
+
+    import resend
+    resend.api_key = settings.RESEND_API_KEY
+    subject = (
+        f"Termin zajęć zaktualizowany: {event.title}"
+        if accepted
+        else f"Prośba o zmianę odrzucona: {event.title}"
+    )
+    msg = {
+        "from": settings.RESEND_FROM_EMAIL,
+        "to": [cr.proposer.email],
+        "subject": subject,
+        "html": _change_request_outcome_html(cr, event, accepted),
+    }
+    await asyncio.to_thread(resend.Emails.send, msg)
+    logger.info("Change outcome email sent | to=%s | outcome=%s",
+                cr.proposer.email, outcome)
+
+
+# ---------------------------------------------------------------------------
+# Legacy stubs — kept until routes_teacher / routes_admin are migrated off
+# the old RescheduleProposal model (Task 7 & 8 will remove these callers).
+# ---------------------------------------------------------------------------
+
 async def send_proposal_email(teacher, proposal) -> None:
-    """Stub: log reschedule proposal notifications."""
+    """Deprecated stub: log old-style reschedule proposal notifications."""
     logger.info(
-        "Reschedule proposal | teacher=%s | event_id=%s | new_start=%s",
+        "Reschedule proposal [legacy] | teacher=%s | event_id=%s | new_start=%s",
         teacher.full_name, proposal.event_id, proposal.new_start,
     )
 
 
 async def send_proposal_outcome_email(proposal, approved: bool) -> None:
-    """Stub: log proposal outcome notifications."""
+    """Deprecated stub: log old-style proposal outcome notifications."""
     outcome = "approved" if approved else "rejected"
-    logger.info("Proposal outcome=%s | proposal_id=%s", outcome, proposal.id)
+    logger.info("Proposal outcome [legacy]=%s | proposal_id=%s", outcome, proposal.id)

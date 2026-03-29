@@ -382,3 +382,46 @@ async def test_list_change_requests(client: AsyncClient, cr_env):
     data = r.json()
     assert isinstance(data, list)
     assert any(item["event_id"] == str(env["event_id"]) for item in data)
+
+
+async def test_email_stubs_are_callable(cr_env):
+    """Smoke test: email functions don't raise when RESEND_API_KEY is unset."""
+    from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
+    from app.models.scheduling import ScheduleEvent, EventStatus
+    from app.services.email import send_change_request_email, send_change_request_outcome_email
+    import uuid
+    from datetime import datetime, timezone
+
+    now = datetime.now(timezone.utc)
+
+    class FakeUser:
+        id = uuid.uuid4()
+        full_name = "Test User"
+        email = "test@test.com"
+        role = None
+
+    class FakeEvent:
+        id = uuid.uuid4()
+        title = "Math lesson"
+        start_time = now
+        end_time = now
+        teacher_id = uuid.uuid4()
+        student_id = uuid.uuid4()
+
+    class FakeCR:
+        id = uuid.uuid4()
+        event_id = uuid.uuid4()
+        proposer_id = uuid.uuid4()
+        responder_id = uuid.uuid4()
+        new_start = now
+        new_end = now
+        note = "test"
+        status = ChangeRequestStatus.PENDING
+        created_at = now
+        resolved_at = None
+        proposer = FakeUser()
+        responder = FakeUser()
+
+    await send_change_request_email(FakeCR(), FakeEvent())
+    await send_change_request_outcome_email(FakeCR(), FakeEvent(), accepted=True)
+    await send_change_request_outcome_email(FakeCR(), FakeEvent(), accepted=False)
