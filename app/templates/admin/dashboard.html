@@ -93,17 +93,6 @@
                     <span class="text-sm font-medium text-purple-300 group-hover:text-purple-200">Użytkownicy</span>
                 </a>
 
-                <a href="/admin/proposals"
-                   class="flex flex-col gap-2 p-4 bg-amber-600/10 border border-amber-500/20 rounded-xl hover:bg-amber-600/20 transition-colors group relative">
-                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
-                    </svg>
-                    <span class="text-sm font-medium text-amber-300 group-hover:text-amber-200">
-                        Propozycje zmian
-                        <span id="proposals-badge" class="hidden ml-1 bg-amber-500 text-gray-950 text-[10px] font-bold px-1.5 py-0.5 rounded-full"></span>
-                    </span>
-                </a>
-
                 <a href="#offerings"
                    onclick="document.getElementById('offerings-section').scrollIntoView({behavior:'smooth'}); return false;"
                    class="flex flex-col gap-2 p-4 bg-teal-600/10 border border-teal-500/20 rounded-xl hover:bg-teal-600/20 transition-colors group">
@@ -332,13 +321,6 @@ async function loadStats() {
                 cutout: '72%',
             },
         });
-
-        // ── Proposals badge ───────────────────────────────────────────────────
-        if (s.pending_proposals > 0) {
-            const badge = document.getElementById('proposals-badge');
-            badge.textContent = s.pending_proposals;
-            badge.classList.remove('hidden');
-        }
 
     } catch (err) {
         console.error('Failed to load stats:', err);
