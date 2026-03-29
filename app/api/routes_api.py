@@ -30,6 +30,7 @@ from app.schemas.series import RecurringSeriesCreate, RecurringSeriesRead
 from app.schemas.unavailability import RecurringUnavailCreate, RecurringUnavailRead
 from app.services.series import generate_events
 from app.services.unavailability import generate_unavailable_blocks
+from app.core.cache import invalidate_user as _cache_invalidate
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -124,6 +125,7 @@ async def create_event(
     db.add(event)
     await db.flush()
     await db.refresh(event)
+    await _cache_invalidate(event.teacher_id, event.student_id)
     return ScheduleEventRead.model_validate(event)
 
 
@@ -146,6 +148,7 @@ async def update_event(
         setattr(event, field, value)
     await db.flush()
     await db.refresh(event)
+    await _cache_invalidate(event.teacher_id, event.student_id)
     return ScheduleEventRead.model_validate(event)
 
 
@@ -163,8 +166,11 @@ async def delete_event(
         raise HTTPException(status_code=404, detail="Event not found")
     if current_user.role != UserRole.ADMIN and event.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not your event")
+    teacher_id = event.teacher_id
+    student_id = event.student_id
     await db.delete(event)
     await db.flush()
+    await _cache_invalidate(teacher_id, student_id)
 
 
 @router.get("/offerings", response_model=list[OfferingRead])
@@ -513,6 +519,7 @@ async def create_series(
                     })
                     break
 
+    await _cache_invalidate(payload.teacher_id, payload.student_id)
     return {"series_id": str(series_id), "events_created": len(events), "conflicts": conflicts}
 
 
@@ -561,6 +568,9 @@ async def delete_series_from(
     if pivot.series_id != series_id:
         raise HTTPException(status_code=404, detail="Event not found in series")
 
+    teacher_id = series.teacher_id
+    student_id = series.student_id
+
     future_result = await db.execute(
         select(ScheduleEvent).where(
             ScheduleEvent.series_id == series_id,
@@ -577,6 +587,8 @@ async def delete_series_from(
     if remaining_result.scalar_one() == 0:
         await db.delete(series)
         await db.flush()
+
+    await _cache_invalidate(teacher_id, student_id)
 
 
 @router.patch("/series/{series_id}/from/{event_id}", status_code=200)
@@ -655,6 +667,7 @@ async def update_series_from(
     db.add_all(new_events)
     await db.flush()
 
+    await _cache_invalidate(payload.teacher_id, payload.student_id)
     return {"series_id": str(series_id), "events_updated": len(new_events)}
 
 
