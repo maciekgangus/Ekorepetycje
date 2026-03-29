@@ -73,6 +73,64 @@ async def create_change_request(
     return cr
 
 
+@router.get("/pending-count", response_class=PlainTextResponse)
+async def pending_count(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> str:
+    """Returns the number of PENDING requests as plain text (for HTMX badge swap).
+
+    Admin: all PENDING requests across all users.
+    Teacher / Student: only requests where they are proposer or responder.
+    """
+    if current_user.role == UserRole.ADMIN:
+        count = (await db.execute(
+            select(func.count(EventChangeRequest.id))
+            .where(EventChangeRequest.status == ChangeRequestStatus.PENDING)
+        )).scalar_one()
+    else:
+        count = (await db.execute(
+            select(func.count(EventChangeRequest.id))
+            .where(
+                EventChangeRequest.status == ChangeRequestStatus.PENDING,
+                (
+                    (EventChangeRequest.proposer_id == current_user.id) |
+                    (EventChangeRequest.responder_id == current_user.id)
+                ),
+            )
+        )).scalar_one()
+    return str(count) if count else ""
+
+
+@router.get("", response_model=list[EventChangeRequestRead])
+async def list_change_requests(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_auth),
+) -> list[EventChangeRequest]:
+    """Returns all change requests involving the current user.
+
+    Admin receives all requests (read-only view).
+    Teacher / Student receive only requests where they are proposer or responder.
+    """
+    from sqlalchemy.orm import selectinload
+
+    q = (
+        select(EventChangeRequest)
+        .options(
+            selectinload(EventChangeRequest.proposer),
+            selectinload(EventChangeRequest.responder),
+            selectinload(EventChangeRequest.event),
+        )
+        .order_by(EventChangeRequest.created_at.desc())
+    )
+    if current_user.role != UserRole.ADMIN:
+        q = q.where(
+            (EventChangeRequest.proposer_id == current_user.id) |
+            (EventChangeRequest.responder_id == current_user.id)
+        )
+    return (await db.execute(q)).scalars().all()
+
+
 async def _get_pending_request(db: AsyncSession, cr_id: UUID) -> EventChangeRequest:
     """Fetch a change request by ID; raise 404 if missing, 409 if not PENDING."""
     cr = (await db.execute(

@@ -333,3 +333,52 @@ async def test_proposer_can_cancel(client: AsyncClient, cr_env):
     )
     assert r2.status_code == 200
     assert r2.json()["status"] == "cancelled"
+
+
+async def test_pending_count_for_teacher(client: AsyncClient, cr_env):
+    """pending-count reflects PENDING requests where user is proposer or responder."""
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    student_cookie = env["student_cookie"]
+
+    # Teacher proposes → student has 1 pending incoming
+    new_start = (env["event_start"] + timedelta(hours=5)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=6)).isoformat()
+    await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+
+    r = await client.get(
+        "/api/change-requests/pending-count",
+        cookies={"session": student_cookie},
+    )
+    assert r.status_code == 200
+    assert int(r.text) >= 1
+
+
+async def test_list_change_requests(client: AsyncClient, cr_env):
+    """GET /api/change-requests returns requests involving the current user."""
+    env = cr_env
+    teacher_cookie = env["teacher_cookie"]
+    new_start = (env["event_start"] + timedelta(hours=5)).isoformat()
+    new_end = (env["event_start"] + timedelta(hours=6)).isoformat()
+    await client.post(
+        "/api/change-requests",
+        json={"event_id": str(env["event_id"]),
+              "new_start": new_start, "new_end": new_end},
+        cookies={"session": teacher_cookie},
+        headers={"X-CSRF-Token": _csrf(teacher_cookie)},
+    )
+
+    r = await client.get(
+        "/api/change-requests",
+        cookies={"session": teacher_cookie},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data, list)
+    assert any(item["event_id"] == str(env["event_id"]) for item in data)
