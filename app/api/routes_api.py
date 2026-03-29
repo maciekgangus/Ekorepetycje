@@ -125,6 +125,7 @@ async def create_event(
     db.add(event)
     await db.flush()
     await db.refresh(event)
+    await db.commit()
     await _cache_invalidate(event.teacher_id, event.student_id)
     return ScheduleEventRead.model_validate(event)
 
@@ -148,6 +149,7 @@ async def update_event(
         setattr(event, field, value)
     await db.flush()
     await db.refresh(event)
+    await db.commit()
     await _cache_invalidate(event.teacher_id, event.student_id)
     return ScheduleEventRead.model_validate(event)
 
@@ -170,6 +172,7 @@ async def delete_event(
     student_id = event.student_id
     await db.delete(event)
     await db.flush()
+    await db.commit()
     await _cache_invalidate(teacher_id, student_id)
 
 
@@ -519,6 +522,7 @@ async def create_series(
                     })
                     break
 
+    await db.commit()
     await _cache_invalidate(payload.teacher_id, payload.student_id)
     return {"series_id": str(series_id), "events_created": len(events), "conflicts": conflicts}
 
@@ -588,6 +592,7 @@ async def delete_series_from(
         await db.delete(series)
         await db.flush()
 
+    await db.commit()
     await _cache_invalidate(teacher_id, student_id)
 
 
@@ -653,6 +658,10 @@ async def update_series_from(
     # so this check only sees genuinely conflicting external events.
     await _assert_no_overlap(db, new_events, payload.teacher_id, payload.student_id)
 
+    # Capture old IDs before overwriting so we can invalidate the old teacher/student too
+    old_teacher_id = series.teacher_id
+    old_student_id = series.student_id
+
     # Update the series rule record
     series.teacher_id = payload.teacher_id
     series.student_id = payload.student_id
@@ -667,6 +676,8 @@ async def update_series_from(
     db.add_all(new_events)
     await db.flush()
 
+    await db.commit()
+    await _cache_invalidate(old_teacher_id, old_student_id)
     await _cache_invalidate(payload.teacher_id, payload.student_id)
     return {"series_id": str(series_id), "events_updated": len(new_events)}
 
