@@ -34,20 +34,73 @@ from app.services.unavailability import generate_unavailable_blocks
 router = APIRouter(prefix="/api", tags=["api"])
 
 
+def _parse_dt(value: str | None) -> datetime | None:
+    """Parse a datetime string tolerantly.
+
+    Handles ISO 8601 strings from FullCalendar (e.g. ``2026-03-29T00:00:00Z``) as well
+    as timezone-aware strings where the ``+`` sign was decoded as a space by ASGI form
+    encoding (e.g. ``2026-03-29T00:00:00 00:00`` → ``2026-03-29T00:00:00+00:00``).
+    """
+    if value is None:
+        return None
+    # ASGI query-string decoding turns '+' → ' '; restore it so fromisoformat works.
+    normalized = value.strip().replace(" ", "+")
+    # Python 3.11+ fromisoformat handles 'Z' and offset forms directly.
+    return datetime.fromisoformat(normalized)
+
+
 @router.get("/events", response_model=list[ScheduleEventRead])
 async def get_events(
     teacher_id: UUID | None = None,
     student_id: UUID | None = None,
+    start: str | None = Query(None),
+    end: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> list[ScheduleEventRead]:
-    """Return schedule events for FullCalendar, optionally filtered by teacher or student."""
+    """Return schedule events for FullCalendar, optionally filtered by teacher/student and date window.
+
+    When start and end are provided (FullCalendar sends them automatically), only events
+    whose start_time falls within [start, end) are returned. Results for single-user
+    teacher/student queries are cached in Redis for 5 minutes per user per window.
+    Admin requests bypass the cache.
+    """
+    from app.core.cache import build_key, get_events as cache_get, set_events as cache_set
+
+    start_dt = _parse_dt(start)
+    end_dt = _parse_dt(end)
+
+    # ── Cache lookup (teacher or student single-user queries only) ───────────
+    cache_key: str | None = None
+    if start_dt and end_dt:
+        if teacher_id and not student_id:
+            cache_key = build_key("t", teacher_id, start_dt.isoformat(), end_dt.isoformat())
+        elif student_id and not teacher_id:
+            cache_key = build_key("s", student_id, start_dt.isoformat(), end_dt.isoformat())
+
+    if cache_key:
+        cached = await cache_get(cache_key)
+        if cached is not None:
+            return json.loads(cached)
+
+    # ── DB query ─────────────────────────────────────────────────────────────
     q = select(ScheduleEvent)
     if teacher_id:
         q = q.where(ScheduleEvent.teacher_id == teacher_id)
     if student_id:
         q = q.where(ScheduleEvent.student_id == student_id)
+    if start_dt:
+        q = q.where(ScheduleEvent.start_time >= start_dt)
+    if end_dt:
+        q = q.where(ScheduleEvent.start_time < end_dt)
+
     result = await db.execute(q)
-    return [ScheduleEventRead.model_validate(e) for e in result.scalars().all()]
+    data = [ScheduleEventRead.model_validate(e) for e in result.scalars().all()]
+
+    # ── Cache store ───────────────────────────────────────────────────────────
+    if cache_key:
+        await cache_set(cache_key, json.dumps([d.model_dump(mode="json") for d in data]))
+
+    return data
 
 
 @router.post("/events", response_model=ScheduleEventRead, status_code=201)
