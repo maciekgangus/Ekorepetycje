@@ -1,0 +1,27 @@
+<div class="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 ml-6">
+    <form hx-post="/api/change-requests"
+          hx-target="closest div"
+          hx-ext="json-enc"
+          class="flex items-end gap-3 flex-wrap">
+        <input type="hidden" name="event_id" value="{{ event.id }}">
+        <div>
+            <label class="block text-xs text-gray-400 mb-1">Nowy start</label>
+            <input type="datetime-local" name="new_start" required
+                   class="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-400 mb-1">Nowy koniec</label>
+            <input type="datetime-local" name="new_end" required
+                   class="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none">
+        </div>
+        <div>
+            <label class="block text-xs text-gray-400 mb-1">Wiadomość (opcjonalnie)</label>
+            <input type="text" name="note" maxlength="500" placeholder="Krótka notatka..."
+                   class="bg-gray-800 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg focus:outline-none w-44">
+        </div>
+        <button type="submit"
+                class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+            Wyślij
+        </button>
+    </form>
+</div>

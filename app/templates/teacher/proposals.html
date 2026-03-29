@@ -1,51 +1,104 @@
 {% extends "base.html" %}
 
-{% block title %}Moje propozycje — Ekorepetycje{% endblock %}
+{% block navbar %}{% include "components/navbar_teacher.html" %}{% endblock %}
+
+{% block title %}Propozycje — Ekorepetycje{% endblock %}
 
 {% block content %}
 <div class="pt-24 pb-16 px-6 max-w-5xl mx-auto">
     <div class="mb-8 flex items-center justify-between">
-        <h1 class="text-3xl font-bold text-white">Moje propozycje zmiany terminu</h1>
+        <h1 class="text-3xl font-bold text-white">Propozycje zmiany terminu</h1>
         <a href="/teacher/" class="text-sm text-gray-400 hover:text-white">← Dashboard</a>
     </div>
 
-    {% if not proposals %}
-    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-12 text-center">
-        <p class="text-gray-500">Nie wysłano jeszcze żadnych propozycji.</p>
-    </div>
-    {% else %}
-    <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden">
-        <table class="w-full text-sm">
-            <thead class="border-b border-gray-800/50">
-                <tr class="text-left text-xs text-gray-500 uppercase tracking-wide">
-                    <th class="px-6 py-4">Zajęcia</th>
-                    <th class="px-6 py-4">Proponowany termin</th>
-                    <th class="px-6 py-4">Wysłano</th>
-                    <th class="px-6 py-4">Status</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-800/30">
-                {% for p in proposals %}
-                <tr class="hover:bg-gray-800/20 transition-colors">
-                    <td class="px-6 py-4 text-white">{{ p.event.title }}</td>
-                    <td class="px-6 py-4 text-gray-300">
-                        {{ p.new_start.strftime('%d.%m.%Y %H:%M') }} – {{ p.new_end.strftime('%H:%M') }}
-                    </td>
-                    <td class="px-6 py-4 text-gray-500">{{ p.created_at.strftime('%d.%m.%Y') }}</td>
-                    <td class="px-6 py-4">
-                        {% if p.status.value == 'pending' %}
-                        <span class="px-2 py-1 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full">Oczekuje</span>
-                        {% elif p.status.value == 'approved' %}
-                        <span class="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">Zatwierdzone</span>
-                        {% else %}
-                        <span class="px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">Odrzucone</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <!-- Incoming (responder) -->
+    <section class="mb-10">
+        <h2 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">Oczekujące na Twoją odpowiedź</h2>
+        {% if not incoming %}
+        <p class="text-gray-500 text-sm">Brak oczekujących próśb.</p>
+        {% else %}
+        <div class="space-y-3">
+            {% for req in incoming %}
+            <div id="cr-{{ req.id }}" class="bg-gray-900/50 border border-gray-800/50 rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                    <p class="font-medium text-white">{{ req.event.title }}</p>
+                    <p class="text-sm text-gray-400 mt-1">
+                        {{ req.proposer.full_name }} proponuje:
+                        {{ req.new_start.strftime('%d.%m.%Y %H:%M') }} – {{ req.new_end.strftime('%H:%M') }}
+                    </p>
+                    {% if req.note %}
+                    <p class="text-xs text-gray-500 mt-1">"{{ req.note }}"</p>
+                    {% endif %}
+                </div>
+                <div class="flex items-center gap-2 ml-4 shrink-0">
+                    <button
+                        hx-patch="/api/change-requests/{{ req.id }}/accept"
+                        hx-target="#cr-{{ req.id }}"
+                        hx-swap="outerHTML"
+                        class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors">
+                        Akceptuj
+                    </button>
+                    <button
+                        hx-patch="/api/change-requests/{{ req.id }}/reject"
+                        hx-target="#cr-{{ req.id }}"
+                        hx-swap="outerHTML"
+                        class="border border-red-500/50 text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg text-xs transition-colors">
+                        Odrzuć
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Outgoing (proposer) -->
+    <section>
+        <h2 class="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">Twoje wysłane prośby</h2>
+        {% if not outgoing %}
+        <p class="text-gray-500 text-sm">Nie wysłano jeszcze żadnych próśb.</p>
+        {% else %}
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-2xl overflow-hidden">
+            <table class="w-full text-sm">
+                <thead class="border-b border-gray-800/50">
+                    <tr class="text-left text-xs text-gray-500 uppercase tracking-wide">
+                        <th class="px-6 py-4">Zajęcia</th>
+                        <th class="px-6 py-4">Proponowany termin</th>
+                        <th class="px-6 py-4">Wysłano</th>
+                        <th class="px-6 py-4">Status / Akcja</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-800/30">
+                    {% for req in outgoing %}
+                    <tr id="cr-out-{{ req.id }}" class="hover:bg-gray-800/20 transition-colors">
+                        <td class="px-6 py-4 text-white">{{ req.event.title }}</td>
+                        <td class="px-6 py-4 text-gray-300">
+                            {{ req.new_start.strftime('%d.%m.%Y %H:%M') }} – {{ req.new_end.strftime('%H:%M') }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-500">{{ req.created_at.strftime('%d.%m.%Y') }}</td>
+                        <td class="px-6 py-4">
+                            {% if req.status.value == 'pending' %}
+                            <button
+                                hx-patch="/api/change-requests/{{ req.id }}/cancel"
+                                hx-target="#cr-out-{{ req.id }}"
+                                hx-swap="outerHTML"
+                                class="text-xs border border-gray-700 text-gray-400 hover:text-white px-3 py-1 rounded-lg transition-colors">
+                                Anuluj
+                            </button>
+                            {% elif req.status.value == 'accepted' %}
+                            <span class="px-2 py-1 text-xs font-medium bg-green-500/20 text-green-400 rounded-full">Zaakceptowana</span>
+                            {% elif req.status.value == 'rejected' %}
+                            <span class="px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">Odrzucona</span>
+                            {% else %}
+                            <span class="px-2 py-1 text-xs font-medium bg-gray-500/20 text-gray-400 rounded-full">Anulowana</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}
