@@ -320,6 +320,52 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
 
 # ─── Recurring Series ─────────────────────────────────────────────────────────
 
+async def _assert_no_overlap(
+    db: AsyncSession,
+    events: list[ScheduleEvent],
+    teacher_id: UUID,
+    student_id: UUID | None,
+) -> None:
+    """Raise HTTP 409 if any proposed event overlaps an existing SCHEDULED event."""
+    if not events:
+        return
+
+    min_start = min(e.start_time for e in events)
+    max_end   = max(e.end_time   for e in events)
+
+    def _window_q(col_filter):
+        return select(ScheduleEvent).where(
+            col_filter,
+            ScheduleEvent.status == EventStatus.SCHEDULED,
+            ScheduleEvent.start_time < max_end,
+            ScheduleEvent.end_time   > min_start,
+        )
+
+    existing_teacher = (
+        await db.execute(_window_q(ScheduleEvent.teacher_id == teacher_id))
+    ).scalars().all()
+    existing_student = (
+        (await db.execute(_window_q(ScheduleEvent.student_id == student_id))).scalars().all()
+        if student_id else []
+    )
+
+    for new_ev in events:
+        for ex in existing_teacher:
+            if ex.start_time < new_ev.end_time and ex.end_time > new_ev.start_time:
+                ts = ex.start_time.strftime("%d.%m.%Y %H:%M")
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Nauczyciel ma już zajęcia w tym czasie: {ex.title} ({ts}).",
+                )
+        for ex in existing_student:
+            if ex.start_time < new_ev.end_time and ex.end_time > new_ev.start_time:
+                ts = ex.start_time.strftime("%d.%m.%Y %H:%M")
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Uczeń ma już zajęcia w tym czasie: {ex.title} ({ts}).",
+                )
+
+
 @router.post("/series", status_code=201)
 async def create_series(
     payload: RecurringSeriesCreate,
@@ -346,6 +392,9 @@ async def create_series(
 
     if not events:
         raise HTTPException(status_code=422, detail="Series would generate zero events. Check start_date and end_date.")
+
+    # Hard block: reject if teacher or student is already booked at any of the generated times
+    await _assert_no_overlap(db, events, payload.teacher_id, payload.student_id)
 
     series = RecurringSeries(
         id=series_id,
@@ -523,6 +572,10 @@ async def update_series_from(
         new_events = generate_events(regenerate_payload, series_id)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+
+    # Hard block: future events for this series were already deleted above (flushed),
+    # so this check only sees genuinely conflicting external events.
+    await _assert_no_overlap(db, new_events, payload.teacher_id, payload.student_id)
 
     # Update the series rule record
     series.teacher_id = payload.teacher_id
