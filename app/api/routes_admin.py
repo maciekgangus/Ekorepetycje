@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_db
@@ -15,18 +15,9 @@ from app.core.csrf import require_csrf
 from app.core.security import hash_password
 from app.core.templates import templates
 from app.models.offerings import Offering
-from app.models.scheduling import ScheduleEvent
 from app.models.users import User, UserRole
-from app.models.proposals import RescheduleProposal, ProposalStatus
 
 router = APIRouter(prefix="/admin")
-
-
-async def _pending_count(db: AsyncSession) -> int:
-    return (await db.execute(
-        select(func.count(RescheduleProposal.id))
-        .where(RescheduleProposal.status == ProposalStatus.PENDING)
-    )).scalar_one()
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -41,10 +32,9 @@ async def admin_dashboard(
         .options(selectinload(User.offerings))
         .order_by(User.full_name)
     )).scalars().all()
-    pending = await _pending_count(db)
     return templates.TemplateResponse(
         request, "admin/dashboard.html",
-        {"teachers": teachers, "pending_proposals": pending},
+        {"teachers": teachers},
     )
 
 
@@ -97,10 +87,9 @@ async def admin_users(
 ) -> HTMLResponse:
     result = await db.execute(select(User).order_by(User.role, User.full_name))
     users = result.scalars().all()
-    pending = await _pending_count(db)
     return templates.TemplateResponse(
         request, "admin/users.html",
-        {"users": users, "roles": list(UserRole), "pending_proposals": pending},
+        {"users": users, "roles": list(UserRole)},
     )
 
 
@@ -121,7 +110,7 @@ async def create_user(
         return templates.TemplateResponse(
             request, "admin/users.html",
             {"users": result.scalars().all(),
-             "roles": list(UserRole), "pending_proposals": await _pending_count(db),
+             "roles": list(UserRole),
              "error": f"Użytkownik z adresem {email} już istnieje."},
         )
     user = User(
@@ -135,7 +124,7 @@ async def create_user(
     users = result.scalars().all()
     return templates.TemplateResponse(
         request, "admin/users.html",
-        {"users": users, "roles": list(UserRole), "pending_proposals": await _pending_count(db)},
+        {"users": users, "roles": list(UserRole)},
     )
 
 
@@ -157,80 +146,6 @@ async def reset_user_password(
     return templates.TemplateResponse(
         request, "components/inline_success.html",
         {"message": "Hasło zmienione."},
-    )
-
-
-@router.get("/proposals", response_class=HTMLResponse)
-async def admin_proposals(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-) -> HTMLResponse:
-    result = await db.execute(
-        select(RescheduleProposal)
-        .where(RescheduleProposal.status == ProposalStatus.PENDING)
-        .options(selectinload(RescheduleProposal.event), selectinload(RescheduleProposal.proposer))
-        .order_by(RescheduleProposal.created_at)
-    )
-    proposals = result.scalars().all()
-    pending = len(proposals)
-    return templates.TemplateResponse(
-        request, "admin/proposals.html",
-        {"proposals": proposals, "pending_proposals": pending},
-    )
-
-
-@router.post("/proposals/{proposal_id}/approve", response_class=HTMLResponse)
-async def approve_proposal(
-    request: Request,
-    proposal_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
-) -> HTMLResponse:
-    # NOTE: send_proposal_outcome_email is defined in Task 12 (email.py stubs).
-    from app.services.email import send_proposal_outcome_email
-    result = await db.execute(
-        select(RescheduleProposal).where(RescheduleProposal.id == proposal_id)
-    )
-    proposal = result.scalar_one_or_none()
-    if proposal and proposal.status == ProposalStatus.PENDING:
-        event_result = await db.execute(
-            select(ScheduleEvent).where(ScheduleEvent.id == proposal.event_id)
-        )
-        event = event_result.scalar_one_or_none()
-        if event:
-            event.start_time = proposal.new_start
-            event.end_time = proposal.new_end
-        proposal.status = ProposalStatus.APPROVED
-        await db.flush()
-        await send_proposal_outcome_email(proposal, approved=True)
-    return templates.TemplateResponse(
-        request, "components/inline_success.html",
-        {"message": "Zaakceptowano."},
-    )
-
-
-@router.post("/proposals/{proposal_id}/reject", response_class=HTMLResponse)
-async def reject_proposal(
-    request: Request,
-    proposal_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
-) -> HTMLResponse:
-    from app.services.email import send_proposal_outcome_email
-    result = await db.execute(
-        select(RescheduleProposal).where(RescheduleProposal.id == proposal_id)
-    )
-    proposal = result.scalar_one_or_none()
-    if proposal and proposal.status == ProposalStatus.PENDING:
-        proposal.status = ProposalStatus.REJECTED
-        await db.flush()
-        await send_proposal_outcome_email(proposal, approved=False)
-    return templates.TemplateResponse(
-        request, "components/inline_success.html",
-        {"message": "Odrzucono."},
     )
 
 

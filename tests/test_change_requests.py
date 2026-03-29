@@ -384,6 +384,26 @@ async def test_list_change_requests(client: AsyncClient, cr_env):
     assert any(item["event_id"] == str(env["event_id"]) for item in data)
 
 
+async def test_admin_cannot_approve_reject_proposals(client: AsyncClient, admin_in_db):
+    """Old admin approval endpoints are removed — must return 404 or 405."""
+    admin_id, admin_cookie = admin_in_db
+    fake_id = str(uuid.uuid4())
+
+    r1 = await client.post(
+        f"/admin/proposals/{fake_id}/approve",
+        cookies={"session": admin_cookie},
+        headers={"X-CSRF-Token": _csrf(admin_cookie)},
+    )
+    assert r1.status_code in (404, 405)
+
+    r2 = await client.post(
+        f"/admin/proposals/{fake_id}/reject",
+        cookies={"session": admin_cookie},
+        headers={"X-CSRF-Token": _csrf(admin_cookie)},
+    )
+    assert r2.status_code in (404, 405)
+
+
 async def test_email_stubs_are_callable(cr_env):
     """Smoke test: email functions don't raise when RESEND_API_KEY is unset."""
     from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
