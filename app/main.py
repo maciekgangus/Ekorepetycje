@@ -28,6 +28,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
+    from app.core import cache as _cache
+    if _cache._client is not None:
+        await _cache._client.aclose()
 
 
 # ---------------------------------------------------------------------------

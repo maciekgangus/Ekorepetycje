@@ -7,6 +7,7 @@ connection fails — cache misses fall through to the database transparently.
 from __future__ import annotations
 
 import logging
+from typing import Literal
 from uuid import UUID
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,7 @@ def _get_client():
     return _client
 
 
-def build_key(role: str, user_id: UUID, start: str, end: str) -> str:
+def build_key(role: Literal["t", "s"], user_id: UUID, start: str, end: str) -> str:
     """Build a cache key from role prefix, user UUID, and ISO date window.
 
     role:  't' for teacher, 's' for student
