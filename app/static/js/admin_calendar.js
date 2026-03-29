@@ -75,6 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (type === 'teacher') params.set('teacher_id', id);
                 else if (type === 'student') params.set('student_id', id);
             }
+            params.set('start', fetchInfo.startStr);
+            params.set('end', fetchInfo.endStr);
             fetch('/api/events?' + params.toString())
                 .then(r => r.json())
                 .then(data => successCallback(data.map(function (rawEvent) {
