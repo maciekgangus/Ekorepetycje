@@ -18,7 +18,6 @@ from app.api.dependencies import get_db
 from app.core.auth import get_current_user, require_teacher_or_admin
 from app.core.csrf import require_csrf
 from app.models.availability import UnavailableBlock
-from app.models.proposals import RescheduleProposal, ProposalStatus
 from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.users import User, UserRole
 from app.models.offerings import Offering
@@ -315,7 +314,7 @@ async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
     total_teachers  = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.TEACHER))).scalar_one()
     total_students  = (await db.execute(select(func.count(User.id)).where(User.role == UserRole.STUDENT))).scalar_one()
     total_offerings = (await db.execute(select(func.count(Offering.id)))).scalar_one()
-    pending_proposals = (await db.execute(select(func.count(RescheduleProposal.id)).where(RescheduleProposal.status == ProposalStatus.PENDING))).scalar_one()
+    pending_proposals = 0  # reschedule_proposals table removed
 
     # ── Lesson counts ─────────────────────────────────────────────────────────
     lessons_this_week  = (await db.execute(select(func.count(ScheduleEvent.id)).where(ScheduleEvent.start_time >= week_start, ScheduleEvent.start_time < week_end, ScheduleEvent.status != EventStatus.CANCELLED))).scalar_one()

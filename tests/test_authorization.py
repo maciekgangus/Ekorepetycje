@@ -164,20 +164,6 @@ async def test_student_cannot_access_teacher_calendar(client, student_in_db):
     assert r.status_code == 303
 
 
-async def test_student_cannot_post_to_teacher_proposals(client, student_in_db):
-    _, cookie = student_in_db
-    r = await client.post(
-        "/teacher/proposals/create",
-        data={
-            "event_id": str(uuid.uuid4()),
-            "new_start": datetime.now(timezone.utc).isoformat(),
-            "new_end": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-        },
-        cookies={"session": cookie},
-    )
-    assert r.status_code == 303
-
-
 # ── Teacher cannot access /admin/ routes ──────────────────────────────────────
 
 async def test_teacher_cannot_access_admin_dashboard(client, teacher_in_db_with_cookie):
@@ -190,12 +176,6 @@ async def test_teacher_cannot_access_admin_dashboard(client, teacher_in_db_with_
 async def test_teacher_cannot_access_admin_users(client, teacher_in_db_with_cookie):
     _, cookie = teacher_in_db_with_cookie
     r = await client.get("/admin/users", cookies={"session": cookie})
-    assert r.status_code == 303
-
-
-async def test_teacher_cannot_access_admin_proposals(client, teacher_in_db_with_cookie):
-    _, cookie = teacher_in_db_with_cookie
-    r = await client.get("/admin/proposals", cookies={"session": cookie})
     assert r.status_code == 303
 
 

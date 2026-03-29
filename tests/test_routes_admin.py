@@ -23,12 +23,6 @@ async def test_admin_calendar_unauthenticated_redirects_to_login(client):
     assert "/login" in r.headers["location"]
 
 
-async def test_admin_proposals_unauthenticated_redirects_to_login(client):
-    r = await client.get("/admin/proposals")
-    assert r.status_code == 303
-    assert "/login" in r.headers["location"]
-
-
 # ── Authenticated as admin ────────────────────────────────────────────────────
 
 async def test_admin_dashboard_authenticated_returns_200(client, admin_in_db):
@@ -52,12 +46,6 @@ async def test_admin_users_authenticated_returns_200(client, admin_in_db):
 async def test_admin_calendar_authenticated_returns_200(client, admin_in_db):
     _, cookie = admin_in_db
     r = await client.get("/admin/calendar", cookies={"session": cookie})
-    assert r.status_code == 200
-
-
-async def test_admin_proposals_authenticated_returns_200(client, admin_in_db):
-    _, cookie = admin_in_db
-    r = await client.get("/admin/proposals", cookies={"session": cookie})
     assert r.status_code == 200
 
 
