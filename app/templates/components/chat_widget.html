@@ -10,10 +10,16 @@
         <!-- Header -->
         <div class="bg-navy px-5 py-4 flex items-center justify-between flex-shrink-0">
             <div class="flex items-center gap-2.5">
+                {% if chat_available %}
                 <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-green-400"></span>
                 </span>
+                {% else %}
+                <span class="relative flex h-2 w-2">
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-gray-500"></span>
+                </span>
+                {% endif %}
                 <span class="text-cream font-medium text-sm tracking-wide">Asystent Ekorepetycje</span>
             </div>
             <button id="chat-close"
@@ -27,6 +33,7 @@
 
         <!-- Messages -->
         <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-3 scroll-smooth">
+            {% if chat_available %}
             <!-- Initial greeting bubble -->
             <div class="flex items-end gap-2">
                 <div class="w-7 h-7 bg-navy rounded-full flex-shrink-0 flex items-center justify-center mb-0.5">
@@ -36,10 +43,22 @@
                     <p>Cześć! Jestem asystentem platformy Ekorepetycje. Mogę odpowiedzieć na pytania o lekcje, przedmioty, rezerwacje i cennik. Jak mogę pomóc? 😊</p>
                 </div>
             </div>
+            {% else %}
+            <!-- Unavailable notice -->
+            <div class="flex items-end gap-2">
+                <div class="w-7 h-7 bg-navy rounded-full flex-shrink-0 flex items-center justify-center mb-0.5">
+                    <span class="text-cream text-[11px] font-serif font-bold">E</span>
+                </div>
+                <div class="chat-bubble-bot">
+                    <p>Chatbot jest teraz niedostępny. W razie pytań skorzystaj z <a href="#contact" class="underline underline-offset-2">formularza kontaktowego</a>.</p>
+                </div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Input bar -->
         <div class="flex-shrink-0 border-t border-ink/10 px-4 py-4 bg-cream">
+            {% if chat_available %}
             <form id="chat-form" class="flex items-center gap-2" autocomplete="off">
                 <input id="chat-input" type="text"
                        placeholder="Napisz wiadomość…"
@@ -56,6 +75,9 @@
                     </svg>
                 </button>
             </form>
+            {% else %}
+            <p class="text-center text-xs text-ink/40 py-1">Asystent AI tymczasowo niedostępny</p>
+            {% endif %}
         </div>
     </div>
 
@@ -82,14 +104,8 @@
     var toggle   = document.getElementById('chat-toggle');
     var panel    = document.getElementById('chat-panel');
     var closeBtn = document.getElementById('chat-close');
-    var form     = document.getElementById('chat-form');
-    var input    = document.getElementById('chat-input');
-    var sendBtn  = document.getElementById('chat-send');
-    var msgList  = document.getElementById('chat-messages');
     var iconChat = document.getElementById('chat-icon-chat');
     var iconX    = document.getElementById('chat-icon-x');
-
-    var history  = [];   // [{role, content}]
     var isOpen   = false;
 
     // ── Open / close ─────────────────────────────────────────────────────────
@@ -99,7 +115,9 @@
         iconChat.classList.add('hidden');
         iconX.classList.remove('hidden');
         isOpen = true;
-        setTimeout(function () { input.focus(); }, 50);
+        {% if chat_available %}
+        setTimeout(function () { document.getElementById('chat-input').focus(); }, 50);
+        {% endif %}
     }
 
     function closePanel() {
@@ -113,12 +131,18 @@
     toggle.addEventListener('click', function () { isOpen ? closePanel() : openPanel(); });
     closeBtn.addEventListener('click', closePanel);
 
-    // Close on Escape
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isOpen) closePanel();
     });
 
-    // ── Message rendering ─────────────────────────────────────────────────────
+    {% if chat_available %}
+    // ── Chat logic (only when AI is available) ────────────────────────────────
+    var form     = document.getElementById('chat-form');
+    var input    = document.getElementById('chat-input');
+    var sendBtn  = document.getElementById('chat-send');
+    var msgList  = document.getElementById('chat-messages');
+    var history  = [];
+
     function addUserBubble(text) {
         var div = document.createElement('div');
         div.className = 'flex items-end justify-end gap-2';
@@ -174,7 +198,6 @@
         msgList.scrollTop = msgList.scrollHeight;
     }
 
-    // ── Send message ──────────────────────────────────────────────────────────
     form.addEventListener('submit', function (e) {
         e.preventDefault();
         var text = input.value.trim();
@@ -243,5 +266,6 @@
             if (isOpen) input.focus();
         });
     });
+    {% endif %}
 })();
 </script>

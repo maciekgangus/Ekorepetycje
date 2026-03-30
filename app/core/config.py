@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     # Leave empty to disable caching (tests, local dev without Redis).
     REDIS_URL: str = ""
 
+    # ── AI Chat ───────────────────────────────────────────────────────────────
+    # "disabled" → chat widget shown but marked unavailable (no LLM needed).
+    # "ollama"   → local Ollama server (requires --profile ai in docker compose).
+    # "bedrock"  → Amazon Bedrock Claude (requires IAM role + AWS credentials).
+    LLM_PROVIDER: str = "disabled"
+
     # ── Cloudflare Turnstile (CAPTCHA) ────────────────────────────────────────
     # Default values are Cloudflare's official test keys — always pass locally.
     # Replace with real keys from https://dash.cloudflare.com/ before going live.

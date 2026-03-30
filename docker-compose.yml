@@ -24,10 +24,11 @@ services:
     profiles:
       - dev
 
-  # ── Ollama — local LLM for dev (CPU-only, no GPU needed) ──────────────────
-  # Start with:  docker compose --profile dev up
+  # ── Ollama — local LLM for AI chat (CPU-only, no GPU needed) ─────────────
+  # Start with:  docker compose --profile ai up
   # Model size:  llama3.2:3b ≈ 2 GB RAM  |  llama3.1:8b ≈ 5 GB RAM
   # First run pulls the model automatically; subsequent runs use the volume cache.
+  # Also set LLM_PROVIDER=ollama in .env when using this profile.
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -46,7 +47,7 @@ services:
       retries: 15
       start_period: 30s
     profiles:
-      - dev
+      - ai
 
   # Pulls the model once on first start; shares ollama's network namespace
   # so "localhost:11434" resolves correctly without Docker DNS.
@@ -64,7 +65,7 @@ services:
     command: pull llama3.2:3b
     restart: "no"
     profiles:
-      - dev
+      - ai
 
   redis:
     image: redis:7-alpine

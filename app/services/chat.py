@@ -1,7 +1,8 @@
 """LLM chat service — Ollama (dev/CPU) or Amazon Bedrock (prod).
 
-Switch via env var:
-  LLM_PROVIDER=ollama   (default) → http://ollama:11434
+Switch via env var (configured in app/core/config.py / .env):
+  LLM_PROVIDER=disabled (default) → chat icon shown, unavailable message
+  LLM_PROVIDER=ollama             → http://ollama:11434
   LLM_PROVIDER=bedrock            → boto3 bedrock-runtime
 
 Ollama model:   OLLAMA_MODEL=llama3.2:3b  (default, ~2 GB RAM)
@@ -121,11 +122,25 @@ class BedrockChatService:
 
 
 # ---------------------------------------------------------------------------
+# Disabled (no LLM configured)
+# ---------------------------------------------------------------------------
+
+class DisabledChatService:
+    """Returns an unavailability notice immediately — no network calls."""
+
+    async def stream(self, messages: list[dict]) -> AsyncIterator[str]:
+        yield "Chatbot jest teraz niedostępny. Skontaktuj się z nami przez formularz kontaktowy."
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 
-def get_chat_service() -> OllamaChatService | BedrockChatService:
-    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+def get_chat_service() -> OllamaChatService | BedrockChatService | DisabledChatService:
+    from app.core.config import settings
+    provider = settings.LLM_PROVIDER.lower()
     if provider == "bedrock":
         return BedrockChatService()
-    return OllamaChatService()
+    if provider == "ollama":
+        return OllamaChatService()
+    return DisabledChatService()

@@ -68,6 +68,7 @@ async def landing_page(
         {
             "featured_teachers": featured_teachers,
             "turnstile_site_key": settings.TURNSTILE_SITE_KEY,
+            "chat_available": settings.LLM_PROVIDER.lower() in ("ollama", "bedrock"),
         },
     )
 
