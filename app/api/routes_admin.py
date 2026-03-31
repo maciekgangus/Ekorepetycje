@@ -89,7 +89,7 @@ async def admin_users(
     users = result.scalars().all()
     return templates.TemplateResponse(
         request, "admin/users.html",
-        {"users": users, "roles": list(UserRole)},
+        {"users": users, "roles": [r for r in UserRole if r != UserRole.ADMIN]},
     )
 
 
@@ -104,18 +104,31 @@ async def create_user(
     _: User = Depends(require_admin),
     _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
+    non_admin_roles = [r for r in UserRole if r != UserRole.ADMIN]
+    try:
+        parsed_role = UserRole(role)
+    except ValueError:
+        parsed_role = None
+    if parsed_role is None or parsed_role == UserRole.ADMIN:
+        result = await db.execute(select(User).order_by(User.role, User.full_name))
+        return templates.TemplateResponse(
+            request, "admin/users.html",
+            {"users": result.scalars().all(),
+             "roles": non_admin_roles,
+             "error": "Nieprawidłowa rola."},
+        )
     existing = (await db.execute(select(User).where(User.email == email))).scalar_one_or_none()
     if existing:
         result = await db.execute(select(User).order_by(User.role, User.full_name))
         return templates.TemplateResponse(
             request, "admin/users.html",
             {"users": result.scalars().all(),
-             "roles": list(UserRole),
+             "roles": non_admin_roles,
              "error": f"Użytkownik z adresem {email} już istnieje."},
         )
     user = User(
         full_name=full_name, email=email,
-        role=UserRole(role),
+        role=parsed_role,
         hashed_password=hash_password(password),
     )
     db.add(user)
@@ -124,7 +137,7 @@ async def create_user(
     users = result.scalars().all()
     return templates.TemplateResponse(
         request, "admin/users.html",
-        {"users": users, "roles": list(UserRole)},
+        {"users": users, "roles": non_admin_roles},
     )
 
 
