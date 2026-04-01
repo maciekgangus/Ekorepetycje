@@ -70,16 +70,25 @@
 <script>window.TEACHER_ID = "{{ user.id }}";</script>
 <script src="/static/js/series_panel.js"></script>
 <script src="/static/js/unavail_panel.js"></script>
-<script src="/static/js/teacher_calendar.js"></script>
+<script src="/static/js/teacher_calendar.js?v=2"></script>
 <script>
+function _localToIso(localStr) {
+    if (!localStr) return '';
+    const off = -new Date(localStr).getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, '0');
+    const mm = String(Math.abs(off) % 60).padStart(2, '0');
+    return localStr + ':00' + sign + hh + ':' + mm;
+}
+
 async function submitUnavailability(e) {
     e.preventDefault();
     const formData = new FormData();
     formData.append('user_id', window.TEACHER_ID);
-    formData.append('start_time', document.getElementById('unavail-start').value);
-    formData.append('end_time', document.getElementById('unavail-end').value);
+    formData.append('start_time', _localToIso(document.getElementById('unavail-start').value));
+    formData.append('end_time', _localToIso(document.getElementById('unavail-end').value));
     formData.append('note', document.getElementById('unavail-note').value);
-    const resp = await fetch('/api/availability', { method: 'POST', body: formData });
+    const resp = await fetch('/api/availability', { method: 'POST', body: formData, headers: { 'X-CSRF-Token': _csrf() } });
     if (resp.ok) {
         document.getElementById('unavail-form').classList.add('hidden');
         if (window._calendar) window._calendar.refetchEvents();
@@ -94,7 +103,7 @@ input[type="time"], input[type="date"], input[type="datetime-local"], input[type
 /* ─── FullCalendar premium dark theme ─────────────────────────────────────── */
 .fc { color: #e2e8f0; }
 .fc-theme-standard .fc-scrollgrid { border-color: #1e293b; }
-.fc-theme-standard td, .fc-theme-standard th { border-color: #1e293b; }
+.fc-theme-standard td, .fc-theme-standard th { border-color: #1e293b; background: transparent; }
 .fc .fc-col-header-cell-cushion { color: #64748b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; }
 .fc .fc-daygrid-day-number { color: #475569; font-size: 0.8rem; }
 .fc .fc-timegrid-slot-label { color: #334155; font-size: 0.7rem; letter-spacing: 0.02em; }

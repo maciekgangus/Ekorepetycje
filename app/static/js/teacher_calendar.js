@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
 
         eventDataTransform: function (rawEvent) {
+            // Availability background blocks already use start/end — pass through untouched.
+            if (!rawEvent.start_time) return rawEvent;
             return {
                 id: rawEvent.id,
                 title: rawEvent.title,
