@@ -72,14 +72,23 @@
 <script src="/static/js/unavail_panel.js"></script>
 <script src="/static/js/student_calendar.js"></script>
 <script>
+function _localToIso(localStr) {
+    if (!localStr) return '';
+    const off = -new Date(localStr).getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, '0');
+    const mm = String(Math.abs(off) % 60).padStart(2, '0');
+    return localStr + ':00' + sign + hh + ':' + mm;
+}
+
 async function submitStudentUnavailability(e) {
     e.preventDefault();
     const formData = new FormData();
     formData.append('user_id', window.USER_ID);
-    formData.append('start_time', document.getElementById('unavail-start').value);
-    formData.append('end_time', document.getElementById('unavail-end').value);
+    formData.append('start_time', _localToIso(document.getElementById('unavail-start').value));
+    formData.append('end_time', _localToIso(document.getElementById('unavail-end').value));
     formData.append('note', document.getElementById('unavail-note').value);
-    const resp = await fetch('/api/availability', { method: 'POST', body: formData });
+    const resp = await fetch('/api/availability', { method: 'POST', body: formData, headers: { 'X-CSRF-Token': _csrf() } });
     if (resp.ok) {
         document.getElementById('unavail-form').classList.add('hidden');
         if (window._calendar) window._calendar.refetchEvents();
