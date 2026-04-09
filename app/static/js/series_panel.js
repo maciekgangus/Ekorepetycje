@@ -321,6 +321,7 @@ function _buildPayload() {
         day_slots: slots,
         end_date: endDate,
         end_count: endCount,
+        utc_offset_minutes: -new Date().getTimezoneOffset(),
     };
 }
 

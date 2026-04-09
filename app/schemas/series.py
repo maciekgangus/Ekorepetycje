@@ -31,6 +31,7 @@ class RecurringSeriesCreate(BaseModel):
     day_slots: Annotated[list[DaySlot], Field(min_length=1)]
     end_date: date | None = None
     end_count: Annotated[int | None, Field(ge=1, le=200)] = None
+    utc_offset_minutes: Annotated[int, Field(ge=-720, le=840)] = 0
 
     @model_validator(mode="after")
     def exactly_one_end_condition(self) -> "RecurringSeriesCreate":

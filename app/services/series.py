@@ -43,14 +43,10 @@ def generate_events(
 
         for slot in sorted_slots:
             slot_date = current_monday + timedelta(days=slot.day)
-            slot_start = datetime(
-                slot_date.year,
-                slot_date.month,
-                slot_date.day,
-                slot.hour,
-                slot.minute,
-                tzinfo=timezone.utc,
-            )
+            slot_start = (
+                datetime(slot_date.year, slot_date.month, slot_date.day, slot.hour, slot.minute)
+                - timedelta(minutes=payload.utc_offset_minutes)
+            ).replace(tzinfo=timezone.utc)
             slot_end = slot_start + timedelta(minutes=slot.duration_minutes)
 
             # end_date check: skip if this slot's date exceeds end_date
