@@ -37,9 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
         slotMaxTime: '22:00:00',
         allDaySlot: false,
         nowIndicator: true,
-        editable: false,
+        editable: true,
         selectable: true,
         selectMinDistance: 10,
+        eventAllow: function (dropInfo, draggedEvent) {
+            return draggedEvent.extendedProps.status === 'scheduled';
+        },
 
         eventSources: [
             {
@@ -94,6 +97,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 info.date.getMinutes(),
                 60
             );
+        },
+
+        // ── Drag event to new slot → create change request ───────────────────
+        eventDrop: async function (info) {
+            const newStart = info.event.start.toISOString();
+            const newEnd   = (info.event.end || new Date(info.event.start.getTime() + 3600000)).toISOString();
+
+            let resp;
+            try {
+                resp = await fetch('/api/change-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
+                    body: JSON.stringify({ event_id: info.event.id, new_start: newStart, new_end: newEnd }),
+                });
+            } catch {
+                info.revert();
+                _showDragToast('Błąd sieci — propozycja nie została wysłana.', true);
+                return;
+            }
+
+            if (resp.ok) {
+                info.event.setProp('color', '#f59e0b');
+                info.event.setProp('textColor', '#1c1917');
+                if (!info.event.title.endsWith(' ↻'))
+                    info.event.setProp('title', info.event.title + ' ↻');
+                _showDragToast('Propozycja wysłana — czeka na akceptację ucznia.');
+            } else {
+                info.revert();
+                const data = await resp.json().catch(() => ({}));
+                _showDragToast(data.detail || 'Nie udało się wysłać propozycji.', true);
+            }
         },
 
         // ── Left-click on event → context menu ───────────────────────────────
@@ -273,4 +307,24 @@ function _showTeacherContextMenu(event, jsEvent) {
     });
 
     setTimeout(() => document.addEventListener('click', _closeTeacherMenu, { once: true }), 0);
+}
+
+// ─── Drag-drop toast ──────────────────────────────────────────────────────────
+
+function _showDragToast(msg, isError = false) {
+    let toast = document.getElementById('fc-drag-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'fc-drag-toast';
+        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.background   = isError ? 'rgba(127,29,29,0.97)' : 'rgba(20,83,45,0.97)';
+    toast.style.color        = isError ? '#fca5a5' : '#86efac';
+    toast.style.border       = isError ? '1px solid #991b1b' : '1px solid #166534';
+    toast.style.backdropFilter = 'blur(12px)';
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
 }
