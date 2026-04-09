@@ -36,15 +36,15 @@
                 <div class="flex items-center gap-2 ml-4 shrink-0">
                     <button
                         hx-patch="/api/change-requests/{{ req.id }}/accept"
-                        hx-target="#cr-{{ req.id }}"
-                        hx-swap="outerHTML"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()"
                         class="bg-green-500 hover:bg-green-400 text-gray-950 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors">
                         Akceptuj
                     </button>
                     <button
                         hx-patch="/api/change-requests/{{ req.id }}/reject"
-                        hx-target="#cr-{{ req.id }}"
-                        hx-swap="outerHTML"
+                        hx-swap="none"
+                        hx-on::after-request="if(event.detail.successful) location.reload()"
                         class="border border-red-500/50 text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg text-xs transition-colors">
                         Odrzuć
                     </button>
@@ -81,8 +81,8 @@
                             {% if req.status.value == 'pending' %}
                             <button
                                 hx-patch="/api/change-requests/{{ req.id }}/cancel"
-                                hx-target="#cr-out-{{ req.id }}"
-                                hx-swap="outerHTML"
+                                hx-swap="none"
+                                hx-on::after-request="if(event.detail.successful) location.reload()"
                                 class="text-xs border border-gray-700 text-gray-400 hover:text-white px-3 py-1 rounded-lg transition-colors">
                                 Anuluj
                             </button>

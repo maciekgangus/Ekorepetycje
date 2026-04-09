@@ -19,11 +19,23 @@
     {% block footer %}{% include "components/footer.html" %}{% endblock %}
     {% block chat_widget %}{% endblock %}
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
     <script>
-        // Attach CSRF token to every HTMX request automatically
+        // Attach CSRF token + fix datetime-local timezone on every HTMX request
         document.body.addEventListener('htmx:configRequest', function (evt) {
             const token = document.querySelector('meta[name="csrf-token"]')?.content;
             if (token) evt.detail.headers['X-CSRF-Token'] = token;
+            // Append local timezone offset to bare datetime-local values (YYYY-MM-DDTHH:MM, 16 chars)
+            ['new_start', 'new_end'].forEach(function (k) {
+                const v = evt.detail.parameters[k];
+                if (v && typeof v === 'string' && v.length === 16) {
+                    const off = -new Date().getTimezoneOffset();
+                    const sign = off >= 0 ? '+' : '-';
+                    const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, '0');
+                    const mm = String(Math.abs(off) % 60).padStart(2, '0');
+                    evt.detail.parameters[k] = v + sign + hh + ':' + mm;
+                }
+            });
         });
     </script>
     {% block extra_scripts %}{% endblock %}

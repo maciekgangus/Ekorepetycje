@@ -1,7 +1,9 @@
 <div class="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 ml-6">
     <form hx-post="/api/change-requests"
           hx-target="closest div"
+          hx-swap="innerHTML"
           hx-ext="json-enc"
+          hx-on::after-request="if(event.detail.successful) this.closest('div').innerHTML='<p class=\'text-green-400 text-sm py-1\'>✓ Propozycja wysłana — uczeń zostanie powiadomiony.</p>'"
           class="flex items-end gap-3 flex-wrap">
         <input type="hidden" name="event_id" value="{{ event.id }}">
         <div>
