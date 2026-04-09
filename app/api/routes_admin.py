@@ -3,15 +3,12 @@
 from decimal import Decimal, InvalidOperation
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, Query, Request
+from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import get_db
-from app.core.auth import require_admin
-from app.core.csrf import require_csrf
+from app.api.dependencies import AdminUser, CSRF, DB
 from app.core.security import hash_password
 from app.core.templates import templates
 from app.models.offerings import Offering
@@ -23,8 +20,8 @@ router = APIRouter(prefix="/admin")
 @router.get("/", response_class=HTMLResponse)
 async def admin_dashboard(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
+    db: DB,
+    _: AdminUser,
 ) -> HTMLResponse:
     teachers = (await db.execute(
         select(User)
@@ -41,9 +38,9 @@ async def admin_dashboard(
 @router.get("/offerings/fragment", response_class=HTMLResponse)
 async def offerings_fragment(
     request: Request,
+    db: DB,
+    _: AdminUser,
     teacher_id: str = Query("all"),
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
 ) -> HTMLResponse:
     q = (select(User)
          .where(User.role == UserRole.TEACHER)
@@ -64,8 +61,8 @@ async def offerings_fragment(
 @router.get("/calendar", response_class=HTMLResponse)
 async def admin_calendar(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    db: DB,
+    current_user: AdminUser,
 ) -> HTMLResponse:
     teachers = (await db.execute(
         select(User).where(User.role == UserRole.TEACHER).order_by(User.full_name)
@@ -82,8 +79,8 @@ async def admin_calendar(
 @router.get("/users", response_class=HTMLResponse)
 async def admin_users(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
+    db: DB,
+    _: AdminUser,
 ) -> HTMLResponse:
     result = await db.execute(select(User).order_by(User.role, User.full_name))
     users = result.scalars().all()
@@ -96,13 +93,13 @@ async def admin_users(
 @router.post("/users/create", response_class=HTMLResponse)
 async def create_user(
     request: Request,
+    db: DB,
+    _: AdminUser,
+    _csrf: CSRF,
     full_name: str = Form(...),
     email: str = Form(...),
     role: str = Form(...),
     password: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     non_admin_roles = [r for r in UserRole if r != UserRole.ADMIN]
     try:
@@ -146,10 +143,10 @@ async def create_user(
 async def reset_user_password(
     request: Request,
     user_id: UUID,
+    db: DB,
+    _: AdminUser,
+    _csrf: CSRF,
     password: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -165,13 +162,13 @@ async def reset_user_password(
 @router.post("/offerings/create", response_class=HTMLResponse)
 async def create_offering_htmx(
     request: Request,
+    db: DB,
+    _: AdminUser,
+    _csrf: CSRF,
     title: str = Form(...),
     description: str = Form(""),
     base_price_per_hour: str = Form(...),
     teacher_id: str = Form(...),
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_admin),
-    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     try:
         price = Decimal(base_price_per_hour)

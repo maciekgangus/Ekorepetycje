@@ -2,14 +2,12 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import get_db
-from app.core.auth import require_teacher_or_admin
+from app.api.dependencies import DB, TeacherUser
 from app.core.templates import templates
 from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
 from app.models.scheduling import ScheduleEvent, EventStatus
@@ -21,8 +19,8 @@ router = APIRouter(prefix="/teacher", tags=["teacher"])
 @router.get("/", response_class=HTMLResponse)
 async def teacher_dashboard(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
+    db: DB,
+    current_user: TeacherUser,
 ) -> HTMLResponse:
     now = datetime.now(timezone.utc)
     result = await db.execute(
@@ -46,7 +44,7 @@ async def teacher_dashboard(
 @router.get("/calendar", response_class=HTMLResponse)
 async def teacher_calendar(
     request: Request,
-    current_user: User = Depends(require_teacher_or_admin),
+    current_user: TeacherUser,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "teacher/calendar.html",
@@ -57,8 +55,8 @@ async def teacher_calendar(
 @router.get("/proposals", response_class=HTMLResponse)
 async def teacher_proposals(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
+    db: DB,
+    current_user: TeacherUser,
 ) -> HTMLResponse:
     result = await db.execute(
         select(EventChangeRequest)

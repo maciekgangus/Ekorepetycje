@@ -3,13 +3,12 @@
 import uuid
 
 import httpx
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.dependencies import get_db
+from app.api.dependencies import DB
 from app.core.config import settings
 from app.core.templates import templates
 from app.models.users import User, UserRole
@@ -51,7 +50,7 @@ def _captcha_error(request: Request, message: str, status: int) -> HTMLResponse:
 @router.get("/", response_class=HTMLResponse)
 async def landing_page(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> HTMLResponse:
     """Render the main landing page with featured teachers."""
     result = await db.execute(
@@ -128,7 +127,7 @@ _SUBJECT_KEYWORDS: dict[str, str] = {
 @router.get("/nauczyciele", response_class=HTMLResponse)
 async def teachers_list(
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> HTMLResponse:
     """Render the full teachers list page."""
     result = await db.execute(
@@ -147,7 +146,7 @@ async def teachers_list(
 async def teacher_profile_page(
     teacher_id: uuid.UUID,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> HTMLResponse:
     """Render an individual teacher profile page."""
     teacher = await db.get(User, teacher_id)
@@ -163,7 +162,7 @@ async def teacher_profile_page(
 async def subject_detail(
     slug: str,
     request: Request,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> HTMLResponse:
     """Render a subject detail page with static description and live teacher list."""
     if slug not in _SUBJECT_KEYWORDS:

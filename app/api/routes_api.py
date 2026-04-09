@@ -7,16 +7,14 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from app.api.dependencies import get_db
-from app.core.auth import get_current_user, require_teacher_or_admin
-from app.core.csrf import require_csrf
+from app.api.dependencies import DB, CSRF, TeacherUser
 from app.models.availability import UnavailableBlock
 from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.users import User, UserRole
@@ -62,11 +60,11 @@ def _parse_dt(value: str | None) -> datetime | None:
 
 @router.get("/events", response_model=list[ScheduleEventRead])
 async def get_events(
+    db: DB,
     teacher_id: UUID | None = None,
     student_id: UUID | None = None,
     start: str | None = Query(None),
     end: str | None = Query(None),
-    db: AsyncSession = Depends(get_db),
 ) -> list[ScheduleEventRead]:
     """Return schedule events for FullCalendar, optionally filtered by teacher/student and date window.
 
@@ -117,7 +115,7 @@ async def get_events(
 @router.post("/events", response_model=ScheduleEventRead, status_code=201)
 async def create_event(
     payload: ScheduleEventCreate,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> ScheduleEventRead:
     """Create a new schedule event."""
     event = ScheduleEvent(**payload.model_dump())
@@ -133,9 +131,9 @@ async def create_event(
 async def update_event(
     event_id: UUID,
     payload: ScheduleEventCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> ScheduleEventRead:
     """Update a single schedule event. Teachers can only update their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
@@ -156,9 +154,9 @@ async def update_event(
 @router.delete("/events/{event_id}", status_code=204)
 async def delete_event(
     event_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> None:
     """Delete a single schedule event. Teachers can only delete their own events."""
     result = await db.execute(select(ScheduleEvent).where(ScheduleEvent.id == event_id))
@@ -177,8 +175,8 @@ async def delete_event(
 
 @router.get("/offerings", response_model=list[OfferingRead])
 async def get_offerings(
+    db: DB,
     teacher_id: UUID | None = Query(None),
-    db: AsyncSession = Depends(get_db),
 ) -> list[OfferingRead]:
     """Return offerings, optionally filtered to a specific teacher."""
     q = select(Offering)
@@ -191,7 +189,7 @@ async def get_offerings(
 @router.post("/offerings", response_model=OfferingRead, status_code=201)
 async def create_offering(
     payload: OfferingCreate,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> OfferingRead:
     """Create a new offering."""
     offering = Offering(**payload.model_dump())
@@ -204,7 +202,7 @@ async def create_offering(
 @router.get("/availability/{user_id}", response_model=list[dict])
 async def get_availability_blocks(
     user_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    db: DB,
 ) -> list[dict]:
     """Return unavailable blocks for a user (teacher or student) for FullCalendar background rendering."""
     result = await db.execute(
@@ -225,13 +223,13 @@ async def get_availability_blocks(
 
 @router.post("/availability", status_code=201)
 async def create_availability_block(
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
     user_id: UUID = Form(...),
     start_time: str = Form(...),
     end_time: str = Form(...),
     note: str = Form(""),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Create a single unavailability block for the given user."""
     if current_user.role != UserRole.ADMIN and current_user.id != user_id:
@@ -249,7 +247,7 @@ async def create_availability_block(
 
 
 @router.get("/teachers", response_model=list[dict])
-async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
+async def get_teachers(db: DB) -> list[dict]:
     """Return all teachers for dropdown population."""
     result = await db.execute(select(User).where(User.role == UserRole.TEACHER))
     return [{"id": str(u.id), "full_name": u.full_name} for u in result.scalars().all()]
@@ -257,8 +255,8 @@ async def get_teachers(db: AsyncSession = Depends(get_db)) -> list[dict]:
 
 @router.get("/students", response_model=list[dict])
 async def get_students(
-    db: AsyncSession = Depends(get_db),
-    _: User = Depends(require_teacher_or_admin),
+    db: DB,
+    _: TeacherUser,
 ) -> list[dict]:
     """Return all students for dropdown population."""
     result = await db.execute(select(User).where(User.role == UserRole.STUDENT))
@@ -266,7 +264,7 @@ async def get_students(
 
 
 @router.get("/stats")
-async def get_stats(db: AsyncSession = Depends(get_db)) -> dict:
+async def get_stats(db: DB) -> dict:
     """Return statistics for the admin dashboard including revenue and teacher breakdown."""
     now = datetime.now(timezone.utc)
 
@@ -441,9 +439,9 @@ async def _assert_no_overlap(
 @router.post("/series", status_code=201)
 async def create_series(
     payload: RecurringSeriesCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> dict:
     """Create a recurring series and pre-generate all ScheduleEvent rows."""
     if current_user.role != UserRole.ADMIN and payload.teacher_id != current_user.id:
@@ -529,8 +527,8 @@ async def create_series(
 @router.get("/series/{series_id}", response_model=RecurringSeriesRead)
 async def get_series(
     series_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
+    db: DB,
+    current_user: TeacherUser,
 ) -> RecurringSeriesRead:
     """Return series rule for pre-filling the edit panel."""
     result = await db.execute(
@@ -548,9 +546,9 @@ async def get_series(
 async def delete_series_from(
     series_id: UUID,
     event_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> None:
     """Delete an event and all following events in the series."""
     series_result = await db.execute(
@@ -600,9 +598,9 @@ async def update_series_from(
     series_id: UUID,
     event_id: UUID,
     payload: RecurringSeriesCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> dict:
     """Delete event and all following, re-generate from updated rule starting that ISO week."""
     series_result = await db.execute(
@@ -686,9 +684,9 @@ async def update_series_from(
 @router.post("/unavailability-series", status_code=201)
 async def create_unavail_series(
     payload: RecurringUnavailCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> dict:
     """Create a recurring unavailability series and pre-generate all UnavailableBlock rows."""
     if current_user.role != UserRole.ADMIN and payload.user_id != current_user.id:
@@ -724,8 +722,8 @@ async def create_unavail_series(
 @router.get("/unavailability-series/{series_id}", response_model=RecurringUnavailRead)
 async def get_unavail_series(
     series_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
+    db: DB,
+    current_user: TeacherUser,
 ) -> RecurringUnavailRead:
     """Return unavailability series rule for pre-filling the edit panel."""
     result = await db.execute(
@@ -743,9 +741,9 @@ async def get_unavail_series(
 async def delete_unavail_series_from(
     series_id: UUID,
     block_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> None:
     """Delete a block and all following blocks in the unavailability series."""
     series_result = await db.execute(
@@ -787,9 +785,9 @@ async def update_unavail_series_from(
     series_id: UUID,
     block_id: UUID,
     payload: RecurringUnavailCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_teacher_or_admin),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
 ) -> dict:
     """Delete block and all following, re-generate from updated rule starting that ISO week."""
     series_result = await db.execute(
@@ -851,10 +849,10 @@ _MAX_PHOTO_BYTES = 2_000_000
 
 @router.post("/teachers/me/photo", response_class=HTMLResponse)
 async def upload_own_photo(
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_teacher_or_admin),
-    db: AsyncSession = Depends(get_db),
-    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     """Teacher uploads their own profile photo. Returns an HTML <img> fragment."""
     return await _save_teacher_photo(file, current_user, db)
@@ -863,10 +861,10 @@ async def upload_own_photo(
 @router.post("/admin/teachers/{teacher_id}/photo", response_class=HTMLResponse)
 async def admin_upload_teacher_photo(
     teacher_id: UUID,
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
     file: UploadFile = File(...),
-    current_user: User = Depends(require_teacher_or_admin),
-    db: AsyncSession = Depends(get_db),
-    _csrf: None = Depends(require_csrf),
 ) -> HTMLResponse:
     """Admin uploads a photo for any teacher."""
     if current_user.role != UserRole.ADMIN:
@@ -919,11 +917,11 @@ async def _save_teacher_photo(
 
 @router.patch("/teachers/me/profile")
 async def update_own_profile(
+    db: DB,
+    current_user: TeacherUser,
+    _csrf: CSRF,
     bio: str = Form(default=""),
     specialties: str = Form(default=""),
-    current_user: User = Depends(require_teacher_or_admin),
-    db: AsyncSession = Depends(get_db),
-    _csrf: None = Depends(require_csrf),
 ) -> dict:
     """Teacher updates their own bio and specialties."""
     current_user.bio = bio.strip() or None
@@ -935,10 +933,10 @@ async def update_own_profile(
 @router.patch("/admin/teachers/{teacher_id}/profile")
 async def admin_update_teacher_profile(
     teacher_id: UUID,
+    db: DB,
+    current_user: TeacherUser,
     bio: str = Form(default=""),
     specialties: str = Form(default=""),
-    current_user: User = Depends(require_teacher_or_admin),
-    db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Admin updates bio and specialties for any teacher."""
     if current_user.role != UserRole.ADMIN:

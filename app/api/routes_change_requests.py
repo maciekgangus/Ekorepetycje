@@ -3,14 +3,12 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from app.api.dependencies import get_db
-from app.core.auth import require_auth
-from app.core.csrf import require_csrf
+from app.api.dependencies import DB, CSRF, CurrentUser
 from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
 from app.models.scheduling import ScheduleEvent
 from app.models.users import User, UserRole
@@ -22,9 +20,9 @@ router = APIRouter(prefix="/api/change-requests", tags=["change-requests"])
 @router.post("", response_model=EventChangeRequestRead, status_code=201)
 async def create_change_request(
     payload: EventChangeRequestCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: CurrentUser,
+    _csrf: CSRF,
 ) -> EventChangeRequest:
     """Teacher or student creates a reschedule request for an event they belong to."""
     event = (await db.execute(
@@ -75,8 +73,8 @@ async def create_change_request(
 
 @router.get("/pending-count", response_class=PlainTextResponse)
 async def pending_count(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
+    db: DB,
+    current_user: CurrentUser,
 ) -> str:
     """Returns the number of PENDING requests as plain text (for HTMX badge swap).
 
@@ -104,8 +102,8 @@ async def pending_count(
 
 @router.get("", response_model=list[EventChangeRequestRead])
 async def list_change_requests(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
+    db: DB,
+    current_user: CurrentUser,
 ) -> list[EventChangeRequest]:
     """Returns all change requests involving the current user.
 
@@ -149,9 +147,9 @@ async def _get_pending_request(db: AsyncSession, cr_id: UUID) -> EventChangeRequ
 @router.patch("/{cr_id}/accept", response_model=EventChangeRequestRead)
 async def accept_change_request(
     cr_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: CurrentUser,
+    _csrf: CSRF,
 ) -> EventChangeRequest:
     """Responder accepts the request — event times are updated immediately."""
     cr = await _get_pending_request(db, cr_id)
@@ -193,9 +191,9 @@ async def accept_change_request(
 @router.patch("/{cr_id}/reject", response_model=EventChangeRequestRead)
 async def reject_change_request(
     cr_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: CurrentUser,
+    _csrf: CSRF,
 ) -> EventChangeRequest:
     """Responder rejects the request."""
     cr = await _get_pending_request(db, cr_id)
@@ -225,9 +223,9 @@ async def reject_change_request(
 @router.patch("/{cr_id}/cancel", response_model=EventChangeRequestRead)
 async def cancel_change_request(
     cr_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_auth),
-    _csrf: None = Depends(require_csrf),
+    db: DB,
+    current_user: CurrentUser,
+    _csrf: CSRF,
 ) -> EventChangeRequest:
     """Proposer cancels their own pending request."""
     cr = await _get_pending_request(db, cr_id)

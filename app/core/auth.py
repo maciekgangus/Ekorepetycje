@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.config import settings
-from app.api.dependencies import get_db
+from app.db.database import get_db
 from app.models.users import User, UserRole
 
 _signer = URLSafeTimedSerializer(settings.SECRET_KEY, salt="session")

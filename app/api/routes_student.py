@@ -2,18 +2,15 @@
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import get_db
-from app.core.auth import require_role
+from app.api.dependencies import DB, StudentUser
 from app.core.templates import templates
 from app.models.change_requests import EventChangeRequest, ChangeRequestStatus
 from app.models.scheduling import ScheduleEvent, EventStatus
-from app.models.users import User, UserRole
 
 router = APIRouter(prefix="/student", tags=["student"])
 
@@ -21,7 +18,7 @@ router = APIRouter(prefix="/student", tags=["student"])
 @router.get("/calendar", response_class=HTMLResponse)
 async def student_calendar(
     request: Request,
-    current_user: User = Depends(require_role(UserRole.STUDENT)),
+    current_user: StudentUser,
 ) -> HTMLResponse:
     return templates.TemplateResponse(
         request, "student/calendar.html",
@@ -32,8 +29,8 @@ async def student_calendar(
 @router.get("/", response_class=HTMLResponse)
 async def student_dashboard(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.STUDENT)),
+    db: DB,
+    current_user: StudentUser,
 ) -> HTMLResponse:
     now = datetime.now(timezone.utc)
     result = await db.execute(
@@ -54,8 +51,8 @@ async def student_dashboard(
 @router.get("/proposals", response_class=HTMLResponse)
 async def student_proposals(
     request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(UserRole.STUDENT)),
+    db: DB,
+    current_user: StudentUser,
 ) -> HTMLResponse:
     result = await db.execute(
         select(EventChangeRequest)
