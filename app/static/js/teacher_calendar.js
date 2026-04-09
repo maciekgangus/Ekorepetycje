@@ -99,35 +99,49 @@ document.addEventListener('DOMContentLoaded', function () {
             );
         },
 
-        // ── Drag event to new slot → create change request ───────────────────
-        eventDrop: async function (info) {
+        // ── Drag event to new slot → undo toast → create change request ─────
+        eventDrop: function (info) {
+            const status       = info.event.extendedProps.status;
+            const origColor    = status === 'completed' ? '#334155' : status === 'cancelled' ? '#b91c1c' : '#0d9488';
+            const origTextColor= status === 'completed' ? '#94a3b8' : status === 'cancelled' ? '#fca5a5' : '#ccfbf1';
+            const origTitle    = info.oldEvent.title;
+
+            // Apply pending visuals immediately so the teacher sees the proposed slot
+            info.event.setProp('color', '#f59e0b');
+            info.event.setProp('textColor', '#1c1917');
+            if (!info.event.title.endsWith(' ↻'))
+                info.event.setProp('title', info.event.title + ' ↻');
+
             const newStart = info.event.start.toISOString();
             const newEnd   = (info.event.end || new Date(info.event.start.getTime() + 3600000)).toISOString();
 
-            let resp;
-            try {
-                resp = await fetch('/api/change-requests', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
-                    body: JSON.stringify({ event_id: info.event.id, new_start: newStart, new_end: newEnd }),
-                });
-            } catch {
+            const revertAll = () => {
                 info.revert();
-                _showDragToast('Błąd sieci — propozycja nie została wysłana.', true);
-                return;
-            }
+                info.event.setProp('color', origColor);
+                info.event.setProp('textColor', origTextColor);
+                info.event.setProp('title', origTitle);
+            };
 
-            if (resp.ok) {
-                info.event.setProp('color', '#f59e0b');
-                info.event.setProp('textColor', '#1c1917');
-                if (!info.event.title.endsWith(' ↻'))
-                    info.event.setProp('title', info.event.title + ' ↻');
-                _showDragToast('Propozycja wysłana — czeka na akceptację ucznia.');
-            } else {
-                info.revert();
-                const data = await resp.json().catch(() => ({}));
-                _showDragToast(data.detail || 'Nie udało się wysłać propozycji.', true);
-            }
+            _showUndoToast('Propozycja zostanie wysłana', async () => {
+                // Countdown finished — send the request
+                let resp;
+                try {
+                    resp = await fetch('/api/change-requests', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': _csrf() },
+                        body: JSON.stringify({ event_id: info.event.id, new_start: newStart, new_end: newEnd }),
+                    });
+                } catch {
+                    revertAll();
+                    _showDragToast('Błąd sieci — propozycja nie została wysłana.', true);
+                    return;
+                }
+                if (!resp.ok) {
+                    revertAll();
+                    const data = await resp.json().catch(() => ({}));
+                    _showDragToast(data.detail || 'Nie udało się wysłać propozycji.', true);
+                }
+            }, revertAll);
         },
 
         // ── Left-click on event → context menu ───────────────────────────────
@@ -309,22 +323,85 @@ function _showTeacherContextMenu(event, jsEvent) {
     setTimeout(() => document.addEventListener('click', _closeTeacherMenu, { once: true }), 0);
 }
 
-// ─── Drag-drop toast ──────────────────────────────────────────────────────────
+// ─── Toasts ───────────────────────────────────────────────────────────────────
 
+/** Short feedback toast (errors, final confirmations). */
 function _showDragToast(msg, isError = false) {
     let toast = document.getElementById('fc-drag-toast');
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'fc-drag-toast';
-        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;';
+        toast.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;pointer-events:none;transition:opacity 0.4s;white-space:nowrap;backdrop-filter:blur(12px);';
         document.body.appendChild(toast);
     }
-    toast.textContent = msg;
-    toast.style.background   = isError ? 'rgba(127,29,29,0.97)' : 'rgba(20,83,45,0.97)';
-    toast.style.color        = isError ? '#fca5a5' : '#86efac';
-    toast.style.border       = isError ? '1px solid #991b1b' : '1px solid #166534';
-    toast.style.backdropFilter = 'blur(12px)';
-    toast.style.opacity = '1';
+    toast.textContent          = msg;
+    toast.style.background     = isError ? 'rgba(127,29,29,0.97)' : 'rgba(20,83,45,0.97)';
+    toast.style.color          = isError ? '#fca5a5' : '#86efac';
+    toast.style.border         = isError ? '1px solid #991b1b' : '1px solid #166534';
+    toast.style.opacity        = '1';
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 3500);
+}
+
+/** Undo toast — shows countdown + "Cofnij" button. Calls onConfirm or onUndo. */
+function _showUndoToast(msg, onConfirm, onUndo, seconds = 6) {
+    // Dismiss any existing undo toast without triggering its callbacks
+    const existing = document.getElementById('fc-undo-toast');
+    if (existing) {
+        clearInterval(existing._iv);
+        clearTimeout(existing._to);
+        existing.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.id = 'fc-undo-toast';
+    toast.style.cssText = [
+        'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:9999;',
+        'overflow:hidden;border-radius:12px;backdrop-filter:blur(16px);',
+        'background:rgba(15,23,42,0.96);border:1px solid rgba(255,255,255,0.1);',
+        'box-shadow:0 8px 32px rgba(0,0,0,0.5);',
+        'display:flex;align-items:center;gap:12px;padding:11px 16px;',
+        'font-size:13px;font-weight:500;white-space:nowrap;',
+    ].join('');
+
+    const label = document.createElement('span');
+    label.style.color = '#e2e8f0';
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Cofnij';
+    btn.style.cssText = [
+        'background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);',
+        'color:#fbbf24;padding:4px 12px;border-radius:6px;',
+        'font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;',
+    ].join('');
+
+    // Shrinking progress bar along the bottom edge
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:absolute;bottom:0;left:0;height:3px;background:#f59e0b;width:100%;';
+
+    toast.appendChild(label);
+    toast.appendChild(btn);
+    toast.appendChild(bar);
+    document.body.appendChild(toast);
+
+    let remaining = seconds;
+    const tick = () => { label.textContent = `${msg} (${remaining}s)`; };
+    tick();
+    toast._iv = setInterval(() => { remaining--; tick(); }, 1000);
+
+    // Kick off CSS transition on next frame so it runs smoothly
+    requestAnimationFrame(() => {
+        bar.style.transition = `width ${seconds}s linear`;
+        bar.style.width = '0%';
+    });
+
+    const finish = (cancel) => {
+        clearInterval(toast._iv);
+        clearTimeout(toast._to);
+        toast.remove();
+        if (cancel) onUndo(); else onConfirm();
+    };
+
+    toast._to = setTimeout(() => finish(false), seconds * 1000);
+    btn.onclick = () => finish(true);
 }
