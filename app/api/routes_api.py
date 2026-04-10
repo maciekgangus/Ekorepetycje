@@ -13,6 +13,7 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import DB, CSRF, TeacherUser
 from app.models.availability import UnavailableBlock
@@ -92,7 +93,7 @@ async def get_events(
             return [ScheduleEventRead.model_validate(item) for item in json.loads(cached)]
 
     # ── DB query ─────────────────────────────────────────────────────────────
-    q = select(ScheduleEvent)
+    q = select(ScheduleEvent).options(selectinload(ScheduleEvent.student))
     if teacher_id:
         q = q.where(ScheduleEvent.teacher_id == teacher_id)
     if student_id:
@@ -103,7 +104,12 @@ async def get_events(
         q = q.where(ScheduleEvent.start_time < end_dt)
 
     result = await db.execute(q)
-    data = [ScheduleEventRead.model_validate(e) for e in result.scalars().all()]
+    data = [
+        ScheduleEventRead.model_validate(e).model_copy(
+            update={"student_name": e.student.full_name if e.student is not None else None}
+        )
+        for e in result.scalars().all()
+    ]
 
     # ── Cache store ───────────────────────────────────────────────────────────
     if cache_key:

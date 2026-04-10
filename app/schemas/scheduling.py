@@ -31,4 +31,5 @@ class ScheduleEventRead(ScheduleEventBase):
 
     id: uuid.UUID
     series_id: uuid.UUID | None = None
+    student_name: str | None = None
     model_config = {"from_attributes": True}

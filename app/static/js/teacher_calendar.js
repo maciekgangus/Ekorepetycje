@@ -3,6 +3,43 @@
  * window.TEACHER_ID is injected from the template.
  */
 
+// ─── Offering colour palette ──────────────────────────────────────────────────
+// Each offering gets a stable colour derived from its UUID (hash → index).
+// Completed/cancelled events still override with their own status colours.
+
+const _OFFERING_PALETTE = [
+    { bg: '#1d4ed8', text: '#bfdbfe' },  // blue
+    { bg: '#7c3aed', text: '#ddd6fe' },  // violet
+    { bg: '#0f766e', text: '#ccfbf1' },  // teal
+    { bg: '#b45309', text: '#fde68a' },  // amber
+    { bg: '#be185d', text: '#fbcfe8' },  // pink
+    { bg: '#15803d', text: '#bbf7d0' },  // green
+    { bg: '#0e7490', text: '#a5f3fc' },  // cyan
+    { bg: '#7e22ce', text: '#e9d5ff' },  // purple
+    { bg: '#c2410c', text: '#fed7aa' },  // orange
+    { bg: '#0369a1', text: '#bae6fd' },  // sky
+];
+
+/**
+ * Return a stable { bg, text } colour for the given offering UUID.
+ * Uses a simple polynomial hash so the same offering always gets the same colour.
+ */
+function _offeringColor(offeringId) {
+    let h = 0;
+    const s = offeringId || '';
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return _OFFERING_PALETTE[h % _OFFERING_PALETTE.length];
+}
+
+/** Return the display colour for an event based on status + offering. */
+function _eventColor(status, offeringId) {
+    if (status === 'completed') return { bg: '#334155', text: '#94a3b8' };
+    if (status === 'cancelled') return { bg: '#7f1d1d', text: '#fca5a5' };
+    return _offeringColor(offeringId);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 /** Escape HTML special chars — prevents XSS when injecting user data into innerHTML. */
 function _h(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -60,6 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
         eventDataTransform: function (rawEvent) {
             // Availability background blocks already use start/end — pass through untouched.
             if (!rawEvent.start_time) return rawEvent;
+            const col = _eventColor(rawEvent.status, rawEvent.offering_id);
             return {
                 id: rawEvent.id,
                 title: rawEvent.title,
@@ -70,13 +108,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     offering_id: rawEvent.offering_id,
                     teacher_id: rawEvent.teacher_id,
                     student_id: rawEvent.student_id,
+                    student_name: rawEvent.student_name || null,
                     series_id: rawEvent.series_id,
                 },
-                color: rawEvent.status === 'completed' ? '#334155' :
-                       rawEvent.status === 'cancelled' ? '#b91c1c' : '#0d9488',
-                textColor: rawEvent.status === 'completed' ? '#94a3b8' :
-                           rawEvent.status === 'cancelled' ? '#fca5a5' : '#ccfbf1',
+                color: col.bg,
+                textColor: col.text,
             };
+        },
+
+        eventContent: function (arg) {
+            const title       = arg.event.title;
+            const timeText    = arg.timeText;
+            const studentName = arg.event.extendedProps.student_name;
+            const el = document.createElement('div');
+            el.style.cssText = 'padding:2px 4px;overflow:hidden;height:100%;display:flex;flex-direction:column;gap:1px;';
+            el.innerHTML =
+                (timeText ? `<span style="font-size:0.68rem;opacity:0.75;line-height:1.2;">${_h(timeText)}</span>` : '') +
+                `<span style="font-size:0.72rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${_h(title)}</span>` +
+                (studentName ? `<span style="font-size:0.65rem;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;">${_h(studentName)}</span>` : '');
+            return { domNodes: [el] };
         },
 
         select: function (info) {
@@ -101,10 +151,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // ── Drag event to new slot → undo toast → create change request ─────
         eventDrop: function (info) {
-            const status       = info.event.extendedProps.status;
-            const origColor    = status === 'completed' ? '#334155' : status === 'cancelled' ? '#b91c1c' : '#0d9488';
-            const origTextColor= status === 'completed' ? '#94a3b8' : status === 'cancelled' ? '#fca5a5' : '#ccfbf1';
-            const origTitle    = info.oldEvent.title;
+            const status   = info.event.extendedProps.status;
+            const origCol  = _eventColor(status, info.event.extendedProps.offering_id);
+            const origTitle = info.oldEvent.title;
 
             // Apply pending visuals immediately so the teacher sees the proposed slot
             info.event.setProp('color', '#f59e0b');
@@ -117,8 +166,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const revertAll = () => {
                 info.revert();
-                info.event.setProp('color', origColor);
-                info.event.setProp('textColor', origTextColor);
+                info.event.setProp('color', origCol.bg);
+                info.event.setProp('textColor', origCol.text);
                 info.event.setProp('title', origTitle);
             };
 
@@ -144,11 +193,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }, revertAll);
         },
 
-        // ── Left-click on event → context menu ───────────────────────────────
-        eventClick: function (info) {
-            info.jsEvent.preventDefault();
-            info.jsEvent.stopPropagation(); // prevents old { once } listener from closing new menu
-            _showTeacherContextMenu(info.event, info.jsEvent);
+        // ── Right-click on event → context menu ──────────────────────────────
+        eventDidMount: function (info) {
+            info.el.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                e.stopPropagation(); // prevent calendarEl handler from also firing
+                _hideTeacherTooltip();
+                _showTeacherContextMenu(info.event, e);
+            });
         },
 
         eventMouseEnter: function (info) { _showTeacherTooltip(info.event, info.jsEvent); },
@@ -202,9 +254,11 @@ function _showTeacherTooltip(event, jsEvent) {
     }
     const col = _T_STATUS_COLORS[event.extendedProps.status] || _T_STATUS_COLORS.scheduled;
     const statusLabel = _T_STATUS_PL[event.extendedProps.status] || event.extendedProps.status;
+    const studentName = event.extendedProps.student_name;
     tip.innerHTML = `
         <div style="background:rgba(10,15,30,0.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.4);padding:10px 13px;">
             <p style="font-size:13px;font-weight:600;color:#f1f5f9;margin:0 0 4px;line-height:1.3">${_h(event.title)}</p>
+            ${studentName ? `<p style="font-size:11px;color:#94a3b8;margin:0 0 4px;">Uczen: ${_h(studentName)}</p>` : ''}
             <p style="font-size:11px;color:#64748b;margin:0;display:flex;align-items:center;gap:5px">
                 <span style="width:6px;height:6px;border-radius:50%;background:${col};flex-shrink:0;display:inline-block"></span>
                 ${_h(statusLabel)}
