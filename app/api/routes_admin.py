@@ -5,13 +5,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Form, Query, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import AdminUser, CSRF, DB
 from app.core.security import hash_password
 from app.core.templates import templates
 from app.models.offerings import Offering
+from app.models.scheduling import ScheduleEvent
 from app.models.users import User, UserRole
 
 router = APIRouter(prefix="/admin")
@@ -185,6 +186,48 @@ async def create_offering_htmx(
     )
     db.add(offering)
     await db.flush()
+    teachers = (await db.execute(
+        select(User)
+        .where(User.role == UserRole.TEACHER)
+        .options(selectinload(User.offerings))
+        .order_by(User.full_name)
+    )).scalars().all()
+    return templates.TemplateResponse(
+        request, "components/offerings_grouped.html",
+        {"teachers": teachers},
+    )
+
+
+@router.delete("/offerings/{offering_id}", response_class=HTMLResponse)
+async def delete_offering(
+    request: Request,
+    offering_id: UUID,
+    db: DB,
+    _: AdminUser,
+    _csrf: CSRF,
+) -> HTMLResponse:
+    offering = await db.get(Offering, offering_id)
+    if not offering:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Offering not found")
+
+    event_count = (await db.execute(
+        select(func.count(ScheduleEvent.id))
+        .where(ScheduleEvent.offering_id == offering_id)
+    )).scalar_one()
+
+    if event_count > 0:
+        resp = templates.TemplateResponse(
+            request, "components/inline_error.html",
+            {"error": f"Nie można usunąć — istnieje {event_count} zajęć powiązanych z tą ofertą."},
+        )
+        resp.headers["HX-Retarget"] = f"#offering-error-{offering_id}"
+        resp.headers["HX-Reswap"] = "innerHTML"
+        return resp
+
+    await db.delete(offering)
+    await db.flush()
+
     teachers = (await db.execute(
         select(User)
         .where(User.role == UserRole.TEACHER)
