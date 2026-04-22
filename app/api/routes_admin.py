@@ -103,6 +103,14 @@ async def create_user(
     password: str = Form(...),
 ) -> HTMLResponse:
     non_admin_roles = [r for r in UserRole if r != UserRole.ADMIN]
+    if len(password) < 8:
+        result = await db.execute(select(User).order_by(User.role, User.full_name))
+        return templates.TemplateResponse(
+            request, "admin/users.html",
+            {"users": result.scalars().all(),
+             "roles": non_admin_roles,
+             "error": "Hasło musi mieć co najmniej 8 znaków."},
+        )
     try:
         parsed_role = UserRole(role)
     except ValueError:
@@ -149,6 +157,11 @@ async def reset_user_password(
     _csrf: CSRF,
     password: str = Form(...),
 ) -> HTMLResponse:
+    if len(password) < 8:
+        return templates.TemplateResponse(
+            request, "components/inline_error.html",
+            {"error": "Hasło musi mieć co najmniej 8 znaków."},
+        )
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if user:

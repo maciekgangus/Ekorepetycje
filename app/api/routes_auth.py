@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from app.api.dependencies import get_db
 from app.core.auth import SESSION_COOKIE, get_current_user, sign_session
+from app.core.config import settings
 from app.core.csrf import require_csrf
 from app.core.security import verify_password
 from app.core.templates import templates
@@ -60,6 +61,7 @@ async def login_submit(
         token,
         httponly=True,
         samesite="lax",
+        secure=not settings.DEBUG,
         max_age=60 * 60 * 24 * 14,
     )
     return response

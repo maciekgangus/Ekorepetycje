@@ -10,6 +10,7 @@ from sqlalchemy import select
 
 from app.api.dependencies import DB
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.core.templates import templates
 from app.models.users import User, UserRole
 from app.schemas.contact import ContactForm
@@ -82,6 +83,7 @@ async def contact_page(request: Request) -> HTMLResponse:
 
 
 @router.post("/contact/submit", response_class=HTMLResponse)
+@limiter.limit("3/minute")
 async def submit_contact(
     request: Request,
     name: str = Form(...),

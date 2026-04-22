@@ -35,6 +35,11 @@ async def change_password(
             request, "profile.html",
             {"user": current_user, "error": "Nieprawidłowe obecne hasło."},
         )
+    if len(new_password) < 8:
+        return templates.TemplateResponse(
+            request, "profile.html",
+            {"user": current_user, "error": "Nowe hasło musi mieć co najmniej 8 znaków."},
+        )
     current_user.hashed_password = hash_password(new_password)
     await db.flush()
     return templates.TemplateResponse(
