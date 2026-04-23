@@ -1,0 +1,53 @@
+# =============================================================================
+# prod.tfvars.example
+# =============================================================================
+# Copy this file to "prod.tfvars" and fill in real values.
+# "prod.tfvars" is gitignored — never commit it.
+#
+# Usage:
+#   terraform init
+#   terraform plan  -var-file=prod.tfvars
+#   terraform apply -var-file=prod.tfvars
+# =============================================================================
+
+aws_region  = "eu-central-1"
+app_name    = "ekorepetycje"
+environment = "prod"
+
+# Your registered domain name
+domain_name = "ekorepetycje.pl"
+
+# Set to false if you manage DNS in Cloudflare, OVH, etc.
+# Then add the CNAMEs from: terraform output acm_validation_cnames
+create_route53_zone = true
+
+# Database
+db_password = "CHANGE_ME_use_a_long_random_password"
+
+# App signing key — generate: python -c "import secrets; print(secrets.token_hex(32))"
+secret_key  = "CHANGE_ME_64_hex_chars_minimum"
+
+# Email (https://resend.com — 3000 emails/month free)
+resend_api_key    = "re_XXXXXXXXXXXX"
+resend_from_email = "Ekorepetycje <noreply@ekorepetycje.pl>"
+resend_to_email   = "kontakt@ekorepetycje.pl"
+
+# Cloudflare Turnstile — replace test keys (https://dash.cloudflare.com)
+turnstile_site_key   = "0x4AAAAAAA..."
+turnstile_secret_key = "0x4AAAAAAA..."
+
+# Compute sizing (adjust as traffic grows)
+ecs_cpu    = 256
+ecs_memory = 512
+
+# Database sizing
+db_instance_class    = "db.t3.micro"
+db_allocated_storage = 20
+db_multi_az          = false   # set true for production SLA
+
+# Optional: S3 bucket for pg_dump backups (create the bucket separately first)
+# backup_s3_bucket = "ekorepetycje-prod-backups"
+
+# Optional: enable AI chat via Amazon Bedrock
+# llm_provider     = "bedrock"
+# bedrock_model_id = "anthropic.claude-3-haiku-20240307-v1:0"

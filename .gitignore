@@ -51,6 +51,14 @@ Thumbs.db
 .playwright-mcp/
 .superpowers/
 
+# Terraform — state files contain secrets, .tfvars contain credentials
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+!terraform/*.tfvars.example
+
 # Local planning & session notes (never commit)
 docs/
 *.local.md

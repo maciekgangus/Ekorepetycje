@@ -1,0 +1,61 @@
+# Exclude everything that doesn't belong in the production image.
+# Keeping the context small speeds up builds and prevents accidental
+# secret leakage (e.g. .env files copied into the image layer).
+
+# Development & local environment
+.env
+*.env
+.env.*
+*.local.md
+
+# Version control
+.git
+.gitignore
+.github
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+dist
+build
+.pytest_cache
+.coverage
+htmlcov
+
+# Node (Tailwind build tooling — CSS is pre-compiled and committed)
+node_modules
+package-lock.json
+
+# Local screenshots / design assets (large, not needed in image)
+*.png
+*.jpg
+!app/static/**/*.jpg
+!app/static/**/*.png
+
+# Terraform (never in image)
+terraform
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Playwright MCP session data
+.playwright-mcp
+.superpowers
+vault_local
+deploy
+
+# Test files (not needed at runtime)
+tests
+
+# Documentation
+docs
+DOCS.md
+README.md
+DEPLOY_DEMO.md
+implementation_plan.md
