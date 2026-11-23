@@ -16,7 +16,6 @@ from app.models.scheduling import ScheduleEvent, EventStatus
 from app.models.series import RecurringSeries
 from app.models.availability import UnavailableBlock
 from app.models.unavail_series import RecurringUnavailSeries
-from app.models.proposals import RescheduleProposal
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
@@ -92,7 +91,6 @@ def rand_slot(base: datetime, teacher_idx: int) -> tuple[datetime, datetime]:
 async def seed():
     async with AsyncSessionLocal() as db:
         # ── 0. Wipe existing non-admin data (in FK order) ────────────────────
-        await db.execute(delete(RescheduleProposal))
         await db.execute(delete(UnavailableBlock))
         await db.execute(delete(RecurringUnavailSeries))
         await db.execute(delete(ScheduleEvent))
